@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fa;
+  --foreground: #1a1a2e;
+  --gn-green: #1a7f37;
+  --gn-green-light: #2ea043;
+  --gn-green-dark: #116329;
+  --gn-blue: #0969da;
+  --gn-blue-light: #218bff;
+  --gn-red: #cf222e;
+  --gn-orange: #e16f24;
+  --gn-gray-50: #f6f8fa;
+  --gn-gray-100: #eaeef2;
+  --gn-gray-200: #d0d7de;
+  --gn-gray-500: #6e7781;
+  --gn-gray-700: #424a53;
+  --gn-gray-900: #1f2328;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-gn-green: var(--gn-green);
+  --color-gn-green-light: var(--gn-green-light);
+  --color-gn-green-dark: var(--gn-green-dark);
+  --color-gn-blue: var(--gn-blue);
+  --color-gn-blue-light: var(--gn-blue-light);
+  --color-gn-red: var(--gn-red);
+  --color-gn-orange: var(--gn-orange);
+  --color-gn-gray-50: var(--gn-gray-50);
+  --color-gn-gray-100: var(--gn-gray-100);
+  --color-gn-gray-200: var(--gn-gray-200);
+  --color-gn-gray-500: var(--gn-gray-500);
+  --color-gn-gray-700: var(--gn-gray-700);
+  --color-gn-gray-900: var(--gn-gray-900);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Hide scrollbar for category bar */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
