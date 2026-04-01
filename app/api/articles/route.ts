@@ -6,6 +6,7 @@ import {
   categories,
   sources,
 } from "@/lib/data";
+import { requireAdmin } from "@/lib/auth-guard";
 
 // GET /api/articles?category=sport&search=kosova
 export async function GET(request: NextRequest) {
@@ -48,8 +49,11 @@ export async function GET(request: NextRequest) {
   return Response.json(articlesWithRelations);
 }
 
-// POST /api/articles — Create a new article
+// POST /api/articles — Create a new article (admin only)
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (!auth.authorized) return auth.response;
+
   const body = await request.json();
 
   const { title, summary, content, imageUrl, categoryId, sourceId, readTime } = body;

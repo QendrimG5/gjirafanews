@@ -1,52 +1,44 @@
+"use client";
+
 import Link from "next/link";
+import { useGetCategoriesQuery } from "@/lib/store/api";
 
-type CategoryWithCount = {
-  id: string;
-  name: string;
-  slug: string;
-  color: string;
-  articleCount: number;
-};
+export default function TopicsPage() {
+  const { data: categories, isLoading } = useGetCategoriesQuery();
 
-async function getCategories(): Promise<CategoryWithCount[]> {
-  const res = await fetch("http://localhost:3000/api/categories", {
-    cache: "no-store",
-  });
-  return res.json();
-}
-
-export default async function TopicsPage() {
-  const categories = await getCategories();
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto px-5 py-16 text-center text-gn-text-tertiary">
+        Duke ngarkuar temat...
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-gn-gray-900 mb-2">Temat</h1>
-      <p className="text-gn-gray-500 mb-6">
-        Zgjidhni temat që ju interesojnë për të ndjekur lajmet.
+    <div className="max-w-3xl mx-auto px-5 py-8">
+      <h1 className="text-2xl font-bold text-gn-text tracking-tight">Temat</h1>
+      <p className="text-gn-text-secondary mt-1 mb-8 text-sm">
+        Zgjidhni temat qe ju interesojne per te ndjekur lajmet.
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {categories.map((cat) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {categories?.map((cat) => (
           <Link
             key={cat.id}
             href={`/category/${cat.slug}`}
-            className="relative overflow-hidden rounded-xl border border-gn-gray-200 p-5 hover:shadow-md transition-shadow group"
+            className="relative overflow-hidden rounded-2xl bg-gn-surface border border-gn-border-light p-5 hover:border-gn-border hover:shadow-lg hover:shadow-black/5 transition-all group"
           >
             <div
-              className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity"
-              style={{ backgroundColor: cat.color }}
-            />
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
-              style={{ backgroundColor: cat.color + "1a" }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center mb-4"
+              style={{ backgroundColor: cat.color + "15" }}
             >
               <div
-                className="w-4 h-4 rounded-full"
+                className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: cat.color }}
               />
             </div>
-            <h3 className="font-semibold text-gn-gray-900">{cat.name}</h3>
-            <p className="text-sm text-gn-gray-500 mt-1">
+            <h3 className="font-semibold text-gn-text text-[15px]">{cat.name}</h3>
+            <p className="text-xs text-gn-text-tertiary mt-1">
               {cat.articleCount} artikuj
             </p>
           </Link>

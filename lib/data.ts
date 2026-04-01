@@ -23,6 +23,19 @@ export type Article = {
   sourceId: string;
 };
 
+export type UserRole = "admin" | "user";
+
+export type User = {
+  id: string;
+  email: string;
+  password: string; // bcrypt hash
+  name: string;
+  role: UserRole;
+  createdAt: string;
+};
+
+export type SafeUser = Omit<User, "password">;
+
 export type ArticleWithRelations = Article & {
   category: Category;
   source: Source;
@@ -233,8 +246,25 @@ export function getArticleWithRelations(article: Article): ArticleWithRelations 
   return { ...article, category, source };
 }
 
-// --- Generate unique ID ---
+// --- Users (mutable array for auth) ---
+export const users: User[] = [
+  {
+    id: "usr-1",
+    email: "admin@gjirafanews.com",
+    password: "$2b$10$A.iCtdsJ4MCr/pv5Xfq4f.KiyaxNR/w1hYZAHPFAWjaq/ytnLR6MS",
+    name: "Admin",
+    role: "admin",
+    createdAt: "2026-01-01T00:00:00Z",
+  },
+];
+
+// --- Generate unique IDs ---
 let counter = articles.length + 1;
 export function generateId(): string {
   return `art-${++counter}`;
+}
+
+let userCounter = users.length + 1;
+export function generateUserId(): string {
+  return `usr-${++userCounter}`;
 }

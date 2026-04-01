@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SaveButton from "@/components/save-button";
 
 type NewsCardProps = {
   id: string;
@@ -16,11 +17,11 @@ function timeAgo(dateStr: string): string {
   const date = new Date(dateStr);
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 60) return `${diffMins} min më parë`;
+  if (diffMins < 60) return `${diffMins}m`;
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} orë më parë`;
+  if (diffHours < 24) return `${diffHours}h`;
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays} ditë më parë`;
+  return `${diffDays}d`;
 }
 
 export default function NewsCard({
@@ -35,31 +36,34 @@ export default function NewsCard({
 }: NewsCardProps) {
   return (
     <Link href={`/article/${id}`} className="group block">
-      <article className="bg-white rounded-xl border border-gn-gray-200 overflow-hidden transition-shadow hover:shadow-md">
-        <div className="relative aspect-[2/1] overflow-hidden bg-gn-gray-100">
+      <article className="bg-gn-surface rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 border border-gn-border-light hover:border-gn-border">
+        <div className="relative aspect-[16/9] overflow-hidden bg-gn-overlay">
           <img
             src={imageUrl}
             alt={title}
-            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
-          <span
-            className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold text-white"
-            style={{ backgroundColor: category.color }}
-          >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-semibold text-gn-text-inverse bg-gn-primary/70 backdrop-blur-sm">
             {category.name}
           </span>
+          <span className="absolute top-3 right-3">
+            <SaveButton articleId={id} />
+          </span>
         </div>
-        <div className="p-4">
-          <h3 className="text-lg font-semibold text-gn-gray-900 leading-snug group-hover:text-gn-green transition-colors line-clamp-2">
+        <div className="p-4 sm:p-5">
+          <h3 className="text-[15px] sm:text-base font-semibold text-gn-text leading-snug group-hover:text-gn-accent transition-colors line-clamp-2">
             {title}
           </h3>
-          <p className="mt-2 text-sm text-gn-gray-500 line-clamp-2">{summary}</p>
-          <div className="mt-3 flex items-center gap-2 text-xs text-gn-gray-500">
-            <span className="font-medium text-gn-gray-700">{source.name}</span>
-            <span>·</span>
+          <p className="mt-2 text-[13px] text-gn-text-secondary leading-relaxed line-clamp-2">
+            {summary}
+          </p>
+          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-gn-text-tertiary">
+            <span className="font-medium text-gn-text-secondary">{source.name}</span>
+            <span className="text-gn-border">|</span>
             <span>{timeAgo(publishedAt)}</span>
-            <span>·</span>
-            <span>{readTime} min lexim</span>
+            <span className="text-gn-border">|</span>
+            <span>{readTime} min</span>
           </div>
         </div>
       </article>

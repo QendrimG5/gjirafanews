@@ -5,6 +5,7 @@ import {
   categories,
   sources,
 } from "@/lib/data";
+import { requireAdmin } from "@/lib/auth-guard";
 
 // GET /api/articles/:id
 export async function GET(
@@ -21,11 +22,14 @@ export async function GET(
   return Response.json(getArticleWithRelations(article));
 }
 
-// PUT /api/articles/:id — Update an article
+// PUT /api/articles/:id — Update an article (admin only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAdmin();
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const index = articles.findIndex((a) => a.id === id);
 
@@ -59,11 +63,14 @@ export async function PUT(
   return Response.json(getArticleWithRelations(articles[index]));
 }
 
-// DELETE /api/articles/:id
+// DELETE /api/articles/:id (admin only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAdmin();
+  if (!auth.authorized) return auth.response;
+
   const { id } = await params;
   const index = articles.findIndex((a) => a.id === id);
 

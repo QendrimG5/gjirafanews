@@ -15,29 +15,28 @@ export default function CategoryBar({ categories }: { categories: Category[] }) 
   const activeSlug = pathname.startsWith("/category/") ? pathname.split("/")[2] : null;
 
   return (
-    <div className="sticky top-14 z-40 bg-white border-b border-gn-gray-100">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex gap-2 px-4 py-3 overflow-x-auto hide-scrollbar">
+    <div className="sticky top-16 z-40 bg-gn-surface/80 backdrop-blur-xl border-b border-gn-border-light">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex gap-1.5 px-5 py-2.5 overflow-x-auto hide-scrollbar">
           <Link
             href="/"
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+            className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all ${
               !activeSlug
-                ? "bg-gn-green text-white"
-                : "bg-gn-gray-100 text-gn-gray-700 hover:bg-gn-gray-200"
+                ? "bg-gn-primary text-gn-text-inverse"
+                : "text-gn-text-secondary hover:bg-gn-overlay hover:text-gn-text"
             }`}
           >
-            Të gjitha
+            Te gjitha
           </Link>
           {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-medium transition-all ${
                 activeSlug === cat.slug
-                  ? "text-white"
-                  : "bg-gn-gray-100 text-gn-gray-700 hover:bg-gn-gray-200"
+                  ? "bg-gn-primary text-gn-text-inverse"
+                  : "text-gn-text-secondary hover:bg-gn-overlay hover:text-gn-text"
               }`}
-              style={activeSlug === cat.slug ? { backgroundColor: cat.color } : undefined}
             >
               {cat.name}
             </Link>
