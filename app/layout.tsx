@@ -16,9 +16,42 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GjirafaNews - Lajmet më të reja shqip",
+  title: {
+    default: "GjirafaNews - Lajmet më të reja shqip",
+    template: "%s | GjirafaNews",
+  },
   description:
     "Platforma juaj për lajmet më të reja në gjuhën shqipe. Politikë, sport, teknologji, kulturë dhe më shumë.",
+  keywords: [
+    "lajme",
+    "shqip",
+    "kosovë",
+    "shqipëri",
+    "politikë",
+    "sport",
+    "teknologji",
+    "kulturë",
+    "GjirafaNews",
+  ],
+  authors: [{ name: "GjirafaNews" }],
+  openGraph: {
+    type: "website",
+    locale: "sq_AL",
+    siteName: "GjirafaNews",
+    title: "GjirafaNews - Lajmet më të reja shqip",
+    description:
+      "Platforma juaj për lajmet më të reja në gjuhën shqipe. Politikë, sport, teknologji, kulturë dhe më shumë.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GjirafaNews - Lajmet më të reja shqip",
+    description:
+      "Platforma juaj për lajmet më të reja në gjuhën shqipe.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
