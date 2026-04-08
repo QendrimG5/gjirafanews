@@ -102,7 +102,6 @@ export default function ArticleForm({
           type="text"
           value={form.title}
           onChange={(e) => updateField("title", e.target.value)}
-          required
           className="w-full px-3 py-2 border border-gn-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gn-primary/20 focus:border-gn-primary"
         />
       </div>
@@ -114,7 +113,6 @@ export default function ArticleForm({
         <textarea
           value={form.summary}
           onChange={(e) => updateField("summary", e.target.value)}
-          required
           rows={2}
           className="w-full px-3 py-2 border border-gn-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gn-primary/20 focus:border-gn-primary"
         />
@@ -127,7 +125,6 @@ export default function ArticleForm({
         <textarea
           value={form.content}
           onChange={(e) => updateField("content", e.target.value)}
-          required
           rows={8}
           className="w-full px-3 py-2 border border-gn-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gn-primary/20 focus:border-gn-primary"
         />
@@ -138,7 +135,7 @@ export default function ArticleForm({
           URL e fotos
         </label>
         <input
-          type="url"
+          type="text"
           value={form.imageUrl}
           onChange={(e) => updateField("imageUrl", e.target.value)}
           placeholder="https://picsum.photos/seed/example/800/400"
@@ -154,7 +151,6 @@ export default function ArticleForm({
           <select
             value={form.categoryId}
             onChange={(e) => updateField("categoryId", e.target.value)}
-            required
             className="w-full px-3 py-2 border border-gn-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gn-primary/20 focus:border-gn-primary"
           >
             <option value="">Zgjidh kategorine</option>
@@ -173,7 +169,6 @@ export default function ArticleForm({
           <select
             value={form.sourceId}
             onChange={(e) => updateField("sourceId", e.target.value)}
-            required
             className="w-full px-3 py-2 border border-gn-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gn-primary/20 focus:border-gn-primary"
           >
             <option value="">Zgjidh burimin</option>
