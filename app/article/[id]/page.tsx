@@ -19,8 +19,52 @@ export default function ArticlePage({
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-5 py-16 text-center text-gn-text-tertiary">
-        Duke ngarkuar artikullin...
+      <div className="max-w-2xl mx-auto px-5 py-8 animate-pulse">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="h-3 w-14 rounded bg-gn-border" />
+          <div className="h-3 w-3 rounded bg-gn-border" />
+          <div className="h-3 w-20 rounded bg-gn-border" />
+        </div>
+
+        {/* Category + Save */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-6 w-20 rounded-full bg-gn-border" />
+          <div className="h-8 w-8 rounded-full bg-gn-border" />
+        </div>
+
+        {/* Title */}
+        <div className="space-y-3">
+          <div className="h-8 w-full rounded bg-gn-border" />
+          <div className="h-8 w-3/4 rounded bg-gn-border" />
+        </div>
+
+        {/* Meta */}
+        <div className="flex items-center gap-3 mt-4">
+          <div className="h-4 w-24 rounded bg-gn-border" />
+          <div className="h-4 w-32 rounded bg-gn-border" />
+          <div className="h-4 w-20 rounded bg-gn-border" />
+        </div>
+
+        {/* Image */}
+        <div className="mt-8 rounded-2xl aspect-[16/9] bg-gn-border" />
+
+        {/* Summary */}
+        <div className="mt-8 border-l-2 border-gn-border pl-5 space-y-2">
+          <div className="h-5 w-full rounded bg-gn-border" />
+          <div className="h-5 w-5/6 rounded bg-gn-border" />
+        </div>
+
+        {/* Content lines */}
+        <div className="mt-6 space-y-3">
+          <div className="h-4 w-full rounded bg-gn-border" />
+          <div className="h-4 w-full rounded bg-gn-border" />
+          <div className="h-4 w-11/12 rounded bg-gn-border" />
+          <div className="h-4 w-full rounded bg-gn-border" />
+          <div className="h-4 w-4/5 rounded bg-gn-border" />
+          <div className="h-4 w-full rounded bg-gn-border" />
+          <div className="h-4 w-3/4 rounded bg-gn-border" />
+        </div>
       </div>
     );
   }

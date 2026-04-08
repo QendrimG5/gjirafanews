@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import BottomNav from "@/components/bottom-nav";
 import StoreProvider from "@/components/providers";
+import ThemeProvider from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,13 +64,23 @@ export default function RootLayout({
     <html
       lang="sq"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col text-foreground">
-        <StoreProvider>
-          <Navbar />
-          <main className="flex-1 pb-20 sm:pb-0">{children}</main>
-          <BottomNav />
-        </StoreProvider>
+        <ThemeProvider>
+          <StoreProvider>
+            <Navbar />
+            <main className="flex-1 pb-20 sm:pb-0">{children}</main>
+            <BottomNav />
+          </StoreProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -62,7 +62,7 @@ export default function NewsCard({
             <span className="font-medium text-gn-text-secondary">{source.name}</span>
             <span className="text-gn-border">|</span>
             <span>{timeAgo(publishedAt)}</span>
-            <span className="text-gn-border">|</span>
+            <span className="text-gn-border dark:text-green-700!">|</span>
             <span>{readTime} min</span>
           </div>
         </div>

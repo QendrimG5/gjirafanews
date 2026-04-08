@@ -35,7 +35,7 @@ export default function NewArticlePage() {
         </h1>
       </div>
 
-      <div className="bg-white rounded-xl border border-gn-border-light p-6">
+      <div className="bg-gn-surface rounded-xl border border-gn-border-light p-6">
         <ArticleForm
           onSubmit={handleSubmit}
           isSubmitting={isPending}

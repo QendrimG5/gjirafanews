@@ -75,7 +75,7 @@ export default function EditArticlePage({
         </h1>
       </div>
 
-      <div className="bg-white rounded-xl border border-gn-border-light p-6">
+      <div className="bg-gn-surface rounded-xl border border-gn-border-light p-6">
         <ArticleForm
           initialData={initialData}
           onSubmit={handleSubmit}

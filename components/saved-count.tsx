@@ -1,10 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSavedArticles } from "@/lib/store/saved-articles";
 
 export default function SavedCount() {
-  const count = useSavedArticles((s) => s.savedIds.length);
+  const storeCount = useSavedArticles((s) => s.savedIds.length);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => setHydrated(true), []);
+
+  const count = hydrated ? storeCount : 0;
 
   return (
     <Link

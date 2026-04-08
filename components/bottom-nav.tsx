@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSavedArticles } from "@/lib/store/saved-articles";
@@ -37,7 +38,12 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const savedCount = useSavedArticles((s) => s.savedIds.length);
+  const storeCount = useSavedArticles((s) => s.savedIds.length);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => setHydrated(true), []);
+
+  const savedCount = hydrated ? storeCount : 0;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gn-surface/80 backdrop-blur-xl border-t border-gn-border-light sm:hidden">

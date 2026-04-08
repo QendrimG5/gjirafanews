@@ -1,23 +1,43 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+
 :root {
   --background: #fafafa;
   --foreground: #171717;
+
+  /* Brand */
   --gn-primary: #18181b;
   --gn-primary-light: #27272a;
   --gn-accent: #16a34a;
   --gn-accent-light: #22c55e;
   --gn-accent-muted: #f0fdf4;
-  --gn-red: #dc2626;
-  --gn-blue: #2563eb;
+
+  /* Semantic — colorblind-safe (Wong palette) */
+  --gn-danger: #c4320a;
+  --gn-danger-muted: #fff1f0;
+  --gn-warning: #b45309;
+  --gn-warning-muted: #fffbeb;
+  --gn-info: #0072b2;
+  --gn-info-muted: #eff6ff;
+  --gn-success: #16a34a;
+  --gn-success-muted: #f0fdf4;
+
+  /* Surface */
   --gn-surface: #ffffff;
-  --gn-surface-raised: #ffffff;
+
+  /* Border */
   --gn-border: #e5e5e5;
   --gn-border-light: #f0f0f0;
+
+  /* Text */
   --gn-text: #171717;
   --gn-text-secondary: #525252;
   --gn-text-tertiary: #a3a3a3;
   --gn-text-inverse: #ffffff;
+
+  /* Overlay */
   --gn-overlay: rgba(0, 0, 0, 0.03);
 }
 
@@ -29,10 +49,15 @@
   --color-gn-accent: var(--gn-accent);
   --color-gn-accent-light: var(--gn-accent-light);
   --color-gn-accent-muted: var(--gn-accent-muted);
-  --color-gn-red: var(--gn-red);
-  --color-gn-blue: var(--gn-blue);
+  --color-gn-danger: var(--gn-danger);
+  --color-gn-danger-muted: var(--gn-danger-muted);
+  --color-gn-warning: var(--gn-warning);
+  --color-gn-warning-muted: var(--gn-warning-muted);
+  --color-gn-info: var(--gn-info);
+  --color-gn-info-muted: var(--gn-info-muted);
+  --color-gn-success: var(--gn-success);
+  --color-gn-success-muted: var(--gn-success-muted);
   --color-gn-surface: var(--gn-surface);
-  --color-gn-surface-raised: var(--gn-surface-raised);
   --color-gn-border: var(--gn-border);
   --color-gn-border-light: var(--gn-border-light);
   --color-gn-text: var(--gn-text);
@@ -42,6 +67,46 @@
   --color-gn-overlay: var(--gn-overlay);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #e5e5e5;
+
+  /* Brand */
+  --gn-primary: #e5e5e5;
+  --gn-primary-light: #d4d4d4;
+  --gn-accent: #22c55e;
+  --gn-accent-light: #4ade80;
+  --gn-accent-muted: #052e16;
+
+  /* Semantic — colorblind-safe (Wong palette, adjusted for dark) */
+  --gn-danger: #ef7a53;
+  --gn-danger-muted: #2d1008;
+  --gn-warning: #f59e0b;
+  --gn-warning-muted: #2d1f04;
+  --gn-info: #38bdf8;
+  --gn-info-muted: #0c2234;
+  --gn-success: #22c55e;
+  --gn-success-muted: #052e16;
+
+  /* Surface */
+  --gn-surface: #141414;
+
+  /* Border */
+  --gn-border: #2a2a2a;
+  --gn-border-light: #1f1f1f;
+
+  /* Text */
+  --gn-text: #e5e5e5;
+  --gn-text-secondary: #a3a3a3;
+  --gn-text-tertiary: #636363;
+  --gn-text-inverse: #0a0a0a;
+
+  /* Overlay */
+  --gn-overlay: rgba(255, 255, 255, 0.04);
+
+  color-scheme: dark;
 }
 
 body {

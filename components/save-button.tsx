@@ -1,10 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSavedArticles } from "@/lib/store/saved-articles";
 
 export default function SaveButton({ articleId }: { articleId: string }) {
   const { toggle, isSaved } = useSavedArticles();
-  const saved = isSaved(articleId);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => setHydrated(true), []);
+
+  const saved = hydrated && isSaved(articleId);
 
   return (
     <button

@@ -72,7 +72,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="text-gn-red">Gabim gjate ngarkimit te artikujve.</div>
+      <div className="text-gn-danger">Gabim gjate ngarkimit te artikujve.</div>
     );
   }
 
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="bg-white rounded-xl border border-gn-border overflow-hidden">
+      <div className="bg-gn-surface rounded-xl border border-gn-border overflow-hidden">
         {/* Sticky table header — stays visible while scrolling the body */}
         <table className="w-full">
           <thead>
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
                               handleDelete(article.id, article.title)
                             }
                             disabled={isDeleting && deletingId === article.id}
-                            className="px-3 py-1 text-xs font-medium text-gn-red border border-gn-red rounded-md hover:bg-gn-red hover:text-gn-text-inverse transition-colors disabled:opacity-50"
+                            className="px-3 py-1 text-xs font-medium text-gn-danger border border-gn-danger rounded-md hover:bg-gn-danger hover:text-gn-text-inverse transition-colors disabled:opacity-50"
                           >
                             Fshi
                           </button>

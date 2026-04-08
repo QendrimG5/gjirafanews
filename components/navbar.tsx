@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AuthNavLink from "@/components/auth-nav-link";
 import SavedCount from "@/components/saved-count";
+import ThemeToggle from "@/components/theme-toggle";
 
 export default function Navbar() {
   return (
@@ -21,6 +22,7 @@ export default function Navbar() {
           >
             Temat
           </Link>
+          <ThemeToggle />
           <SavedCount />
           <AuthNavLink />
         </nav>

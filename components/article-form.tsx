@@ -89,7 +89,7 @@ export default function ArticleForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5 max-w-2xl">
       {error && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-gn-red">
+        <div className="p-3 rounded-lg bg-gn-danger-muted border border-gn-danger/20 text-sm text-gn-danger">
           {error}
         </div>
       )}
