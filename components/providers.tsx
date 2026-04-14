@@ -35,12 +35,8 @@ export default function StoreProvider({
     queryClientRef.current = new QueryClient({
       defaultOptions: {
         queries: {
-          // Don't refetch when the browser tab regains focus — avoids
-          // unnecessary requests during development and for a news site
-          // where data freshness is handled by explicit invalidation.
           refetchOnWindowFocus: false,
-          // Keep cached data for 5 minutes before marking it stale.
-          // Individual hooks can override this (e.g. categories use 10 min).
+          retry: false,
           staleTime: 5 * 60 * 1000,
         },
       },

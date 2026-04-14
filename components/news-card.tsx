@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import SaveButton from "@/components/save-button";
 
@@ -35,35 +36,47 @@ export default function NewsCard({
   source,
 }: NewsCardProps) {
   return (
-    <Link href={`/article/${id}`} className="group block">
-      <article className="bg-gn-surface rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/5 border border-gn-border-light hover:border-gn-border">
-        <div className="relative aspect-[16/9] overflow-hidden bg-gn-overlay">
-          <img
-            src={imageUrl}
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-semibold text-gn-text-inverse bg-gn-primary/70 backdrop-blur-sm">
-            {category.name}
-          </span>
-          <span className="absolute top-3 right-3">
-            <SaveButton articleId={id} />
-          </span>
-        </div>
-        <div className="p-4 sm:p-5">
-          <h3 className="text-[15px] sm:text-base font-semibold text-gn-text leading-snug group-hover:text-gn-accent transition-colors line-clamp-2">
-            {title}
-          </h3>
-          <p className="mt-2 text-[13px] text-gn-text-secondary leading-relaxed line-clamp-2">
-            {summary}
-          </p>
-          <div className="mt-3 flex items-center gap-1.5 text-[12px] text-gn-text-tertiary">
-            <span className="font-medium text-gn-text-secondary">{source.name}</span>
-            <span className="text-gn-border">|</span>
-            <span>{timeAgo(publishedAt)}</span>
-            <span className="text-gn-border dark:text-green-700!">|</span>
-            <span>{readTime} min</span>
+    <Link
+      href={`/article/${id}`}
+      className="group block"
+      aria-label={`${title} — ${source.name}, ${timeAgo(publishedAt)}, ${readTime} min lexim`}
+    >
+      <article aria-labelledby={`card-title-${id}`}>
+        <div className="bg-gn-surface rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-gn-overlay border border-gn-border-light hover:border-gn-border">
+          <div className="relative aspect-video overflow-hidden bg-gn-overlay">
+            <Image
+              src={imageUrl}
+              alt=""
+              role="presentation"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.10]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" aria-hidden="true" />
+            <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-semibold text-gn-text-inverse bg-gn-primary/70 backdrop-blur-sm" aria-hidden="true">
+              {category.name}
+            </span>
+            <span className="absolute top-3 right-3">
+              <SaveButton articleId={id} />
+            </span>
+          </div>
+          <div className="p-4 sm:p-5">
+            <h3
+              id={`card-title-${id}`}
+              className="text-[15px] sm:text-base font-semibold text-gn-text leading-snug group-hover:text-gn-accent transition-colors line-clamp-2"
+            >
+              {title}
+            </h3>
+            <p className="mt-2 text-[13px] text-gn-text-secondary leading-relaxed line-clamp-2">
+              {summary}
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-[12px] text-gn-text-tertiary" aria-hidden="true">
+              <span className="font-medium text-gn-text-secondary">{source.name}</span>
+              <span className="text-gn-border">|</span>
+              <span>{timeAgo(publishedAt)}</span>
+              <span className="text-gn-border">|</span>
+              <span>{readTime} min</span>
+            </div>
           </div>
         </div>
       </article>

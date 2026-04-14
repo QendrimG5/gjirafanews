@@ -5,6 +5,7 @@ import Navbar from "@/components/navbar";
 import BottomNav from "@/components/bottom-nav";
 import StoreProvider from "@/components/providers";
 import ThemeProvider from "@/components/theme-provider";
+import GoogleAnalytics from "@/components/google-analytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -67,13 +68,14 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script
+        {/* <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}
-        />
+        /> */}
       </head>
       <body className="min-h-full flex flex-col text-foreground">
+        <GoogleAnalytics />
         <ThemeProvider>
           <StoreProvider>
             <Navbar />

@@ -23,10 +23,15 @@ export default function LoginPage() {
     try {
       const result = await login({ email, password });
       dispatch(setUser(result.user));
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: "login_completed", method: "email" });
       router.push("/admin");
     } catch (err: unknown) {
       const apiError = err as { data?: { error?: string } };
-      setError(apiError?.data?.error || "Login failed. Please try again.");
+      const message = apiError?.data?.error || "Login failed. Please try again.";
+      setError(message);
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({ event: "login_failed", error_message: message });
     }
   }
 

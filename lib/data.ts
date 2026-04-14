@@ -48,7 +48,7 @@ export const categories: Category[] = [
   { id: "cat-3", name: "Teknologji", slug: "teknologji", color: "#0969da" },
   { id: "cat-4", name: "Kultura", slug: "kultura", color: "#8250df" },
   { id: "cat-5", name: "Ekonomi", slug: "ekonomi", color: "#e16f24" },
-  { id: "cat-6", name: "Botë", slug: "bote", color: "#0550ae" },
+  { id: "cat-6", name: "World", slug: "world", color: "#0550ae" },
 ];
 
 // --- Sources ---
@@ -117,17 +117,6 @@ export const articles: Article[] = [
     sourceId: "src-1",
   },
   {
-    id: "art-6",
-    title: "BE miraton planin e ri për zgjerimin në Ballkanin Perëndimor",
-    summary: "Plani i ri përfshin kritere të reja dhe afate kohore për integrimin e vendeve të rajonit.",
-    content: "Komisioni Evropian ka prezantuar sot planin e ri strategjik për zgjerimin në Ballkanin Perëndimor. Plani përfshin kritere të rinovuara dhe afate kohore më të qarta për procesin e integrimit.",
-    imageUrl: "https://picsum.photos/seed/bote1/800/400",
-    publishedAt: "2026-03-30T16:00:00Z",
-    readTime: 6,
-    categoryId: "cat-6",
-    sourceId: "src-2",
-  },
-  {
     id: "art-7",
     title: "Prishtina Smart City: Projekti i ri i digjitalizimit",
     summary: "Komuna e Prishtinës lanson platformën e re dixhitale për shërbime komunale.",
@@ -192,17 +181,6 @@ export const articles: Article[] = [
     readTime: 3,
     categoryId: "cat-3",
     sourceId: "src-4",
-  },
-  {
-    id: "art-13",
-    title: "Samiti i Berlinit: Liderat diskutojnë stabilitetin rajonal",
-    summary: "Kryeministrat e Ballkanit Perëndimor takohen me liderat e BE-së në Berlin.",
-    content: "Samiti i Procesit të Berlinit ka mbledhur liderat e Ballkanit Perëndimor me ata të Bashkimit Evropian për të diskutuar stabilitetin rajonal dhe integrimin evropian.",
-    imageUrl: "https://picsum.photos/seed/bote2/800/400",
-    publishedAt: "2026-03-29T17:00:00Z",
-    readTime: 5,
-    categoryId: "cat-6",
-    sourceId: "src-1",
   },
   {
     id: "art-14",

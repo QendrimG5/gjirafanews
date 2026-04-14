@@ -67,7 +67,32 @@ export default function AdminDashboard() {
   }
 
   if (isLoading) {
-    return <div className="text-gn-text-tertiary">Duke ngarkuar artikujt...</div>;
+    return (
+      <div className="animate-pulse">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-8 w-32 rounded bg-gn-border" />
+          <div className="h-10 w-36 rounded-lg bg-gn-border" />
+        </div>
+        <div className="bg-gn-surface rounded-xl border border-gn-border overflow-hidden">
+          <div className="border-b border-gn-border bg-gn-overlay px-4 py-3 flex gap-4">
+            <div className="h-3 w-[35%] rounded bg-gn-border" />
+            <div className="h-3 w-[15%] rounded bg-gn-border" />
+            <div className="h-3 w-[15%] rounded bg-gn-border" />
+            <div className="h-3 w-[15%] rounded bg-gn-border" />
+            <div className="h-3 w-[20%] rounded bg-gn-border" />
+          </div>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex gap-4 px-4 py-4 border-b border-gn-border-light">
+              <div className="h-4 w-[35%] rounded bg-gn-border" />
+              <div className="h-4 w-[15%] rounded bg-gn-border" />
+              <div className="h-4 w-[15%] rounded bg-gn-border" />
+              <div className="h-4 w-[15%] rounded bg-gn-border" />
+              <div className="h-4 w-[20%] rounded bg-gn-border" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (error) {
