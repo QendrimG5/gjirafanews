@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@gjirafanews/types": ["../../packages/types/src"],
+      "@gjirafanews/utils": ["../../packages/utils/src"],
+      "@gjirafanews/ui": ["../../packages/ui/src"]
+    }
+  },
+  "include": ["src", "vite-env.d.ts"],
+  "exclude": ["node_modules"]
+}

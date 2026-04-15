@@ -1,51 +1,21 @@
 {
-  "name": "gjirafanews",
-  "version": "0.1.0",
+  "name": "gjirafanews-monorepo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "jest --verbose",
-    "test:watch": "jest --watch",
-    "test:e2e": "npx playwright test",
-    "test:e2e:headed": "npx playwright test --headed",
-    "test:e2e:ui": "npx playwright test --ui"
-  },
-  "dependencies": {
-    "@reduxjs/toolkit": "^2.11.2",
-    "@tanstack/react-query": "^5.96.0",
-    "@tanstack/react-virtual": "^3.13.23",
-    "bcryptjs": "^3.0.3",
-    "jose": "^6.2.2",
-    "next": "16.2.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-redux": "^9.2.0",
-    "server-only": "^0.0.1",
-    "zustand": "^5.0.12"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.59.1",
-    "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.1",
-    "jest": "^30.3.0",
-    "jest-environment-jsdom": "^30.3.0",
-    "prettier": "^3.8.2",
-    "prettier-plugin-tailwindcss": "^0.7.2",
-    "tailwindcss": "^4",
-    "ts-jest": "^29.4.9",
-    "tsx": "^4.21.0",
-    "typescript": "^5"
+    "dev": "pnpm -r --parallel run dev",
+    "dev:gjirafa": "npm run dev -w apps/gjirafa-news",
+    "dev:pulse": "npm run dev -w apps/pulse-news",
+    "dev:admin": "npm run dev -w apps/admin-web",
+    "dev:admin2": "npm run dev -w apps/admin-web2",
+    "build": "npm run build -w apps/gjirafa-news",
+    "start": "npm run start -w apps/gjirafa-news",
+    "lint": "npm run lint -w apps/gjirafa-news",
+    "test": "npm run test -w apps/gjirafa-news",
+    "test:e2e": "npm run test:e2e -w apps/gjirafa-news",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json}\""
   }
 }
