@@ -214,3 +214,17 @@ const generateUserIdFn = createIdGenerator("usr-", users.length);
 export function generateUserId(): string {
   return generateUserIdFn();
 }
+
+const generateCategoryIdFn = createIdGenerator("cat-", categories.length);
+export function generateCategoryId(): string {
+  return generateCategoryIdFn();
+}
+
+export function slugify(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import CategoryBar from "@/components/category-bar";
+
+export const dynamic = "force-dynamic";
+
 import SaveButton from "@/components/save-button";
 import HomePageLive from "@/components/homepage";
 import NewsletterBanner from "@/components/newsletter-banner";

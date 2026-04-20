@@ -19,6 +19,12 @@ export default function AdminLayout() {
             >
               + Artikull i ri
             </Link>
+            <Link
+              to="/categories"
+              className="text-xs text-white/60 transition-colors hover:text-white"
+            >
+              Kategorite
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-white/50">{data?.user?.name}</span>

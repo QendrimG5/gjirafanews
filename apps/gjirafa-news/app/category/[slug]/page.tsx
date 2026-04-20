@@ -6,6 +6,8 @@ import AIChat from "@/components/chat";
 import { articles, categories, getArticleWithRelations } from "@/lib/data";
 import TrackEvent from "@/components/track-event";
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({
   params,
 }: {

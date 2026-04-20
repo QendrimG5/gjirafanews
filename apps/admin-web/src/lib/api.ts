@@ -6,6 +6,8 @@ import type {
   ArticleWithRelationsResponse,
   CreateArticleRequest,
   CategoryWithCount,
+  CreateCategoryRequest,
+  Category,
   SourceResponse,
 } from "@gjirafanews/types";
 
@@ -149,6 +151,33 @@ export function useGetCategoriesQuery() {
     queryKey: queryKeys.categories,
     queryFn: () => api<CategoryWithCount[]>("/categories"),
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useCreateCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateCategoryRequest) =>
+      api<Category>("/categories", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+    },
+  });
+}
+
+export function useDeleteCategoryMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<{ message: string; id: string }>(`/categories/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+    },
   });
 }
 

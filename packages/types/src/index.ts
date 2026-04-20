@@ -93,6 +93,12 @@ export type CategoryWithCount = Category & {
   articleCount: number;
 };
 
+export type CreateCategoryRequest = {
+  name: string;
+  color?: string;
+  slug?: string;
+};
+
 export type SourceResponse = {
   id: string;
   name: string;
