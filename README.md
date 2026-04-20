@@ -350,3 +350,15 @@ packages/types    → (no internal deps)
 - **Imports:** Use `@/` alias for app-local imports, `@gjirafanews/*` for shared packages
 - **Components:** Shared UI lives in `packages/ui`, app-specific components stay in each app's `components/` directory
 - **Types:** All shared types go through `packages/types` — never duplicate type definitions across apps
+
+
+
+ SSE side:                                                                                                                           
+  - https://sse.dev/test (demo)
+  - Vercel ai SDK + useChat (production pattern)                                                                                      
+  - Native fetch + ReadableStream (showing how it works under the hood)                                                             
+                                                                                                                                      
+  WS side:                                                                                                                            
+  - wss://echo.websocket.events (demo send/receive)                                                                                   
+  - wss://stream.binance.com:9443/ws/btcusdt@trade (real-world feed demo)                                                             
+  - Native WebSocket API (no library needed for teaching basics)    

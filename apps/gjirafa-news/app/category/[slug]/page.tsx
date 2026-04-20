@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import NewsCard from "@/components/news-card";
 import CategoryBar from "@/components/category-bar";
+import AIChat from "@/components/chat";
 import { articles, categories, getArticleWithRelations } from "@/lib/data";
 import TrackEvent from "@/components/track-event";
 
@@ -69,6 +70,19 @@ export default async function CategoryPage({
           {categoryArticles.map((article) => (
             <NewsCard key={article.id} {...article} />
           ))}
+        </div>
+
+        {/* AI Chat — category-specific SSE streaming */}
+        <div className="mb-5 mt-10 flex items-center gap-3">
+          <h2 className="text-gn-text text-sm font-semibold tracking-wider uppercase">
+            AI Asistenti — {category.name}
+          </h2>
+          <div className="bg-gn-border-light h-px flex-1" />
+        </div>
+        <div className="mb-8">
+          <AIChat
+            config={{ categoryId: category.id, categoryName: category.name }}
+          />
         </div>
       </div>
     </>

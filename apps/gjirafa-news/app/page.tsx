@@ -1,7 +1,7 @@
 import Link from "next/link";
-import NewsCard from "@/components/news-card";
 import CategoryBar from "@/components/category-bar";
 import SaveButton from "@/components/save-button";
+import HomePageLive from "@/components/homepage";
 import { articles, categories, getArticleWithRelations } from "@/lib/data";
 
 function timeAgo(dateStr: string): string {
@@ -25,7 +25,6 @@ export default function Home() {
     .map(getArticleWithRelations);
 
   const featured = sortedArticles[0];
-  const rest = sortedArticles.slice(1);
 
   return (
     <>
@@ -68,20 +67,7 @@ export default function Home() {
           </Link>
         )}
 
-        {/* Section label */}
-        <div className="mb-5 flex items-center gap-3">
-          <h2 className="text-gn-text text-sm font-semibold tracking-wider uppercase">
-            Me te rejat
-          </h2>
-          <div className="bg-gn-border-light h-px flex-1" />
-        </div>
-
-        {/* Article grid */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {rest.map((article) => (
-            <NewsCard key={article.id} {...article} />
-          ))}
-        </div>
+        <HomePageLive username="Anonim" initialArticles={sortedArticles} />
       </div>
     </>
   );
