@@ -1,61 +1,21 @@
 /**
- * ArticlesTable — virtualized data table for article lists.
+ * ArticlesTable — data table for article lists.
  *
- * Uses @tanstack/react-virtual for efficient rendering of large lists.
- * Both headers and body cells are fully dynamic — driven by the columns array.
- * Each column defines its own render function, so the table has no opinion
- * about cell content (text, badges, buttons, links, etc.).
- *
- * @prop columns      — Array of Column objects defining headers and cell renderers.
- * @prop articles     — The data array (ArticleWithRelations[]).
- * @prop emptyMessage — Text shown when articles is empty. Defaults to "Nuk ka artikuj. Krijo nje te ri."
+ * Uses CSS Grid (not <table>) so header and rows share a single
+ * `grid-template-columns` string and columns line up exactly, regardless
+ * of cell content width. For large lists, swap in virtualization later;
+ * for typical admin page sizes this renders fine as-is.
  *
  * Column shape:
- *   key       — Unique identifier for React keys.
+ *   key       — React key + column id.
  *   label     — Header text (rendered uppercase).
- *   width     — CSS width string (e.g. "35%", "200px").
+ *   width     — Any valid grid track size (e.g. "2fr", "180px", "minmax(0,1fr)").
  *   align     — "left" (default) or "right".
- *   className — Extra CSS classes on the <td>.
- *   render    — (article: ArticleWithRelations) => ReactNode — cell content.
- *
- * @example
- * const columns: Column[] = [
- *   {
- *     key: "title",
- *     label: "Titulli",
- *     width: "35%",
- *     render: (a) => <span className="text-sm font-medium">{a.title}</span>,
- *   },
- *   {
- *     key: "category",
- *     label: "Kategoria",
- *     width: "15%",
- *     render: (a) => (
- *       <span style={{ backgroundColor: a.category.color }} className="rounded-full px-2 py-0.5 text-xs text-white">
- *         {a.category.name}
- *       </span>
- *     ),
- *   },
- *   {
- *     key: "actions",
- *     label: "Veprime",
- *     width: "20%",
- *     align: "right",
- *     render: (a) => <Button variant="danger" size="sm" onClick={() => onDelete(a.id)}>Fshi</Button>,
- *   },
- * ];
- *
- * <ArticlesTable columns={columns} articles={articles} />
- *
- * // Custom empty message
- * <ArticlesTable columns={columns} articles={[]} emptyMessage="Asnje rezultat." />
+ *   className — Extra CSS classes on the cell.
+ *   render    — (article) => ReactNode — cell content.
  */
-import { useRef, type ReactNode } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import type { ReactNode } from "react";
 import type { ArticleWithRelations } from "@gjirafanews/types";
-
-const ROW_HEIGHT = 53;
-const OVERSCAN = 5;
 
 export type Column = {
   key: string;
@@ -77,82 +37,57 @@ export default function ArticlesTable({
   articles,
   emptyMessage = "Nuk ka artikuj. Krijo nje te ri.",
 }: ArticlesTableProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: articles.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: OVERSCAN,
-  });
+  const gridTemplateColumns = columns.map((c) => c.width).join(" ");
 
   return (
-    <div className="bg-gn-surface border-gn-border overflow-hidden rounded-xl border">
-      <table className="w-full">
-        <thead>
-          <tr className="border-gn-border bg-gn-overlay border-b">
-            {columns.map((col) => (
-              <th
-                key={col.label}
-                className={`text-gn-text-tertiary px-4 py-3 text-xs font-semibold uppercase ${col.align === "right" ? "text-right" : "text-left"}`}
-                style={{ width: col.width }}
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-      </table>
-
+    <div className="bg-gn-surface border-gn-border overflow-hidden rounded-xl border shadow-sm">
+      {/* Header */}
       <div
-        ref={scrollRef}
-        className="overflow-auto"
-        style={{ maxHeight: "calc(100vh - 280px)" }}
+        role="row"
+        className="bg-gn-overlay border-gn-border text-gn-text-tertiary grid items-center gap-4 border-b px-5 py-3.5 text-[11px] font-semibold tracking-wider uppercase"
+        style={{ gridTemplateColumns }}
       >
-        <div
-          style={{
-            height: virtualizer.getTotalSize(),
-            position: "relative",
-          }}
-        >
-          <table className="w-full">
-            <tbody>
-              {virtualizer.getVirtualItems().map((virtualRow) => {
-                const article = articles[virtualRow.index];
-                return (
-                  <tr
-                    key={article.id}
-                    data-index={virtualRow.index}
-                    ref={virtualizer.measureElement}
-                    className="border-gn-border-light hover:bg-gn-overlay border-b transition-colors"
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      width: "100%",
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                  >
-                    {columns.map((col) => (
-                      <td
-                        key={col.key}
-                        className={`px-4 py-3 ${col.align === "right" ? "text-right" : ""} ${col.className ?? ""}`}
-                        style={{ width: col.width }}
-                      >
-                        {col.render(article)}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {columns.map((col) => (
+          <div
+            key={col.key}
+            role="columnheader"
+            className={`min-w-0 ${col.align === "right" ? "text-right" : "text-left"}`}
+          >
+            {col.label}
+          </div>
+        ))}
       </div>
 
-      {articles.length === 0 && (
-        <div className="text-gn-text-tertiary px-4 py-8 text-center">
+      {/* Body */}
+      {articles.length === 0 ? (
+        <div className="text-gn-text-tertiary px-5 py-12 text-center text-sm">
           {emptyMessage}
+        </div>
+      ) : (
+        <div
+          role="rowgroup"
+          className="max-h-[calc(100vh-280px)] overflow-auto"
+        >
+          {articles.map((article) => (
+            <div
+              key={article.id}
+              role="row"
+              className="border-gn-border-light hover:bg-gn-overlay grid items-center gap-4 border-b px-5 py-3 transition-colors last:border-b-0"
+              style={{ gridTemplateColumns }}
+            >
+              {columns.map((col) => (
+                <div
+                  key={col.key}
+                  role="cell"
+                  className={`min-w-0 ${
+                    col.align === "right" ? "text-right" : ""
+                  } ${col.className ?? ""}`}
+                >
+                  {col.render(article)}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       )}
     </div>
