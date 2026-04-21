@@ -1,23 +1,24 @@
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCreateArticleMutation } from "@/lib/api";
 import ArticleForm, { type ArticleFormData } from "@/components/article-form";
 
 export default function NewArticlePage() {
-  const navigate = useNavigate();
-  const { mutateAsync: createArticle, isPending } =
-    useCreateArticleMutation();
+  const router = useRouter();
+  const { mutateAsync: createArticle, isPending } = useCreateArticleMutation();
 
   async function handleSubmit(data: ArticleFormData) {
     await createArticle(data);
-    navigate("/");
+    router.push("/");
   }
 
   return (
     <div>
       <div className="mb-6">
         <Link
-          to="/"
+          href="/"
           className="text-gn-text-tertiary hover:text-gn-text text-sm transition-colors"
         >
           &larr; Kthehu te artikujt

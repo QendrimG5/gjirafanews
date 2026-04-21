@@ -1,13 +1,15 @@
-import { useNavigate } from "react-router-dom";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { useLogoutMutation } from "@/lib/api";
 
 export default function LogoutButton() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { mutateAsync: logout, isPending } = useLogoutMutation();
 
   async function handleLogout() {
     await logout();
-    navigate("/login");
+    router.replace("/login");
   }
 
   return (

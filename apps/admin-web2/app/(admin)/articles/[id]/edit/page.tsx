@@ -1,17 +1,20 @@
-import { useNavigate, useParams, Link } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { useGetArticleQuery, useUpdateArticleMutation } from "@/lib/api";
 import ArticleForm, { type ArticleFormData } from "@/components/article-form";
 
 export default function EditArticlePage() {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { data: article, isLoading } = useGetArticleQuery(id!);
-  const { mutateAsync: updateArticle, isPending } =
-    useUpdateArticleMutation();
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const id = params.id;
+  const { data: article, isLoading } = useGetArticleQuery(id);
+  const { mutateAsync: updateArticle, isPending } = useUpdateArticleMutation();
 
   async function handleSubmit(data: ArticleFormData) {
-    await updateArticle({ id: id!, data });
-    navigate("/");
+    await updateArticle({ id, data });
+    router.push("/");
   }
 
   if (isLoading) {
@@ -38,7 +41,7 @@ export default function EditArticlePage() {
     <div>
       <div className="mb-6">
         <Link
-          to="/"
+          href="/"
           className="text-gn-text-tertiary hover:text-gn-text text-sm transition-colors"
         >
           &larr; Kthehu te artikujt

@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ArticlesTable, type Column } from "@gjirafanews/ui";
 import { useGetArticlesQuery, useDeleteArticleMutation } from "@/lib/api";
 
@@ -57,8 +59,7 @@ export default function DashboardPage() {
       label: "Data",
       width: "15%",
       className: "text-gn-text-tertiary text-sm",
-      render: (a) =>
-        new Date(a.publishedAt).toLocaleDateString("sq-AL"),
+      render: (a) => new Date(a.publishedAt).toLocaleDateString("sq-AL"),
     },
     {
       key: "actions",
@@ -68,7 +69,7 @@ export default function DashboardPage() {
       render: (a) => (
         <div className="flex items-center justify-end gap-2">
           <Link
-            to={`/articles/${a.id}/edit`}
+            href={`/articles/${a.id}/edit`}
             className="text-gn-text-secondary border-gn-border hover:bg-gn-primary hover:text-gn-text-inverse rounded-md border px-3 py-1 text-xs font-medium transition-colors"
           >
             Ndrysho
@@ -128,7 +129,7 @@ export default function DashboardPage() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-gn-text text-2xl font-bold">Artikujt</h1>
         <Link
-          to="/articles/new"
+          href="/articles/new"
           className="bg-gn-primary text-gn-text-inverse rounded-lg px-4 py-2 text-sm font-semibold transition-colors hover:opacity-90"
         >
           + Artikull i ri

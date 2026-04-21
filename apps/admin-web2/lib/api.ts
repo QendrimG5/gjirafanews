@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type {
   LoginRequest,
@@ -11,7 +13,7 @@ import type {
 
 export type { ArticleWithRelationsResponse, CreateArticleRequest } from "@gjirafanews/types";
 
-// Fetch wrapper — uses relative URL (proxied by Vite to the Next.js backend)
+// Fetch wrapper — uses relative URL (proxied by next.config rewrites to the backend)
 async function api<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`/api${url}`, {
     headers: { "Content-Type": "application/json" },

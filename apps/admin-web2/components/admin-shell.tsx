@@ -1,8 +1,14 @@
-import { Link, Outlet } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
 import { useGetMeQuery } from "@/lib/api";
 import LogoutButton from "./logout-button";
 
-export default function AdminLayout() {
+export default function AdminShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { data } = useGetMeQuery();
 
   return (
@@ -10,11 +16,11 @@ export default function AdminLayout() {
       <div className="bg-gn-primary text-gn-text-inverse">
         <div className="mx-auto flex h-12 max-w-6xl items-center justify-between px-5">
           <div className="flex items-center gap-5">
-            <Link to="/" className="text-sm font-semibold tracking-tight">
+            <Link href="/" className="text-sm font-semibold tracking-tight">
               Admin Panel
             </Link>
             <Link
-              to="/articles/new"
+              href="/articles/new"
               className="text-xs text-white/60 transition-colors hover:text-white"
             >
               + Artikull i ri
@@ -26,9 +32,7 @@ export default function AdminLayout() {
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-6xl px-5 py-8">
-        <Outlet />
-      </div>
+      <div className="mx-auto max-w-6xl px-5 py-8">{children}</div>
     </div>
   );
 }

@@ -1,10 +1,12 @@
+"use client";
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { useLoginMutation } from "@/lib/api";
 import { Button } from "@gjirafanews/ui";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { mutateAsync: login, isPending } = useLoginMutation();
 
   const [email, setEmail] = useState("");
@@ -17,7 +19,7 @@ export default function LoginPage() {
 
     try {
       await login({ email, password });
-      navigate("/");
+      router.replace("/");
     } catch (err: unknown) {
       const apiError = err as { data?: { error?: string } };
       setError(apiError?.data?.error || "Login failed. Please try again.");
