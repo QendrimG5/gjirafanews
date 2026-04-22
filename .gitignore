@@ -2,6 +2,9 @@
 
 # dependencies
 node_modules/
+**/node_modules/
+apps/*/node_modules/
+packages/*/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -44,3 +47,15 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# docker compose cache
+.cache/
+*.cache
+
+# visual studio / .NET
+.vs/
+**/.vs/
+obj/
+**/obj/
+bin/
+**/bin/

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(taskkill /PID 8968 /F)",
+      "Bash(taskkill /PID 35600 /F)",
+      "PowerShell(Stop-Process *)",
+      "Bash(timeout 30 pnpm dev)",
+      "Bash(grep -iE \"\\\\.\\(md|mdx|txt\\)$\")",
+      "Bash(timeout 15 pnpm dev)"
+    ]
+  }
+}

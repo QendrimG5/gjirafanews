@@ -1,27 +1,24 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useLoginMutation } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@gjirafanews/ui";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { mutateAsync: login, isPending } = useLoginMutation();
+  const { initialized, authenticated, login } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-
-    try {
-      await login({ email, password });
-      navigate("/");
-    } catch (err: unknown) {
-      const apiError = err as { data?: { error?: string } };
-      setError(apiError?.data?.error || "Login failed. Please try again.");
+  useEffect(() => {
+    if (initialized && authenticated) {
+      navigate("/", { replace: true });
     }
+  }, [initialized, authenticated, navigate]);
+
+  if (!initialized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-gn-text-tertiary">Duke ngarkuar...</div>
+      </div>
+    );
   }
 
   return (
@@ -35,61 +32,15 @@ export default function LoginPage() {
             Kyqu ne GjirafaNews
           </h1>
           <p className="text-gn-text-tertiary mt-1 text-sm">
-            Fut te dhenat per te hyre ne panel
+            Identifikimi behet permes Keycloak
           </p>
         </div>
-
-        {error && (
-          <div className="bg-gn-danger-muted text-gn-danger mb-4 rounded-xl p-3 text-sm">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="text-gn-text-secondary mb-1.5 block text-xs font-medium uppercase tracking-wider"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="bg-gn-surface border-gn-border text-gn-text focus:ring-gn-primary/20 focus:border-gn-primary w-full rounded-xl border px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2"
-              placeholder="email@shembull.com"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="text-gn-text-secondary mb-1.5 block text-xs font-medium uppercase tracking-wider"
-            >
-              Fjalekalimi
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="bg-gn-surface border-gn-border text-gn-text focus:ring-gn-primary/20 focus:border-gn-primary w-full rounded-xl border px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2"
-              placeholder="Shkruaj fjalekalimin"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="bg-gn-primary text-gn-text-inverse w-full"
-          >
-            {isPending ? "Duke u kyqur..." : "Kyqu"}
-          </Button>
-        </form>
+        <Button
+          onClick={() => login()}
+          className="bg-gn-primary text-gn-text-inverse w-full"
+        >
+          Kyqu me Keycloak
+        </Button>
       </div>
     </div>
   );
