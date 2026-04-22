@@ -1,0 +1,6 @@
+@GjirafaNewsAPI_HostAddress = http://localhost:5283
+
+GET {{GjirafaNewsAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

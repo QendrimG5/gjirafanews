@@ -1,0 +1,20 @@
+services:
+  gjirafanewsapi:
+    ports: ["8080:8080"]
+    depends_on: [loki]
+    image: ${DOCKER_REGISTRY-}gjirafanewsapi
+    build:
+      context: .
+      dockerfile: GjirafaNewsAPI/Dockerfile
+  loki:
+    image: grafana/loki:3.0.0
+    ports: ["3100:3100"]
+  grafana:
+    image: grafana/grafana:11.0.0
+    ports: ["3000:3000"]
+    depends_on: [loki]
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
