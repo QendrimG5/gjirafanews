@@ -9,7 +9,7 @@ namespace GjirafaNewsAPI.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    // [Authorize]
+    [Authorize]
     public class UsersController(IUserService userService) : ControllerBase
     {
         [HttpGet("me")]
@@ -29,17 +29,17 @@ namespace GjirafaNewsAPI.Controllers
         }
 
         [HttpGet]
-        // [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         public ActionResult<ApiResponse<IEnumerable<UserResponse>>> GetAll() =>
             Ok(ApiResponse<IEnumerable<UserResponse>>.Ok(userService.GetAll()));
 
         [HttpGet("{id:guid}")]
-        // [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         public ActionResult<ApiResponse<UserResponse>> GetById(Guid id) =>
             Ok(ApiResponse<UserResponse>.Ok(userService.GetById(id)));
 
         [HttpPost]
-        // [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         public ActionResult<ApiResponse<UserResponse>> Create([FromBody] CreateUserRequest request)
         {
             var created = userService.Create(request);
@@ -48,12 +48,12 @@ namespace GjirafaNewsAPI.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        // [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         public ActionResult<ApiResponse<UserResponse>> Update(Guid id, [FromBody] UpdateUserRequest request) =>
             Ok(ApiResponse<UserResponse>.Ok(userService.Update(id, request), "User updated"));
 
         [HttpDelete("{id:guid}")]
-        // [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "AdminOnly")]
         public ActionResult<ApiResponse<object?>> Delete(Guid id)
         {
             userService.Delete(id);
