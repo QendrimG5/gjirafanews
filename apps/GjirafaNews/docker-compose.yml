@@ -1,14 +1,67 @@
 services:
   gjirafanewsapi:
     ports: ["8080:8080"]
-    depends_on: [loki]
+    depends_on:
+      loki:
+        condition: service_started
+      pgbouncer:
+        condition: service_started
+      postgres:
+        condition: service_healthy
     image: ${DOCKER_REGISTRY-}gjirafanewsapi
     build:
       context: .
       dockerfile: GjirafaNewsAPI/Dockerfile
+    environment:
+      # Migrations run via direct Postgres connection (PgBouncer transaction pooling
+      # breaks EF migrations' prepared statements / session state).
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=gjirafanews;Username=gjirafanews;Password=secret"
+      ASPNETCORE_ENVIRONMENT: Development
+
+  # ── PostgreSQL 16 ─────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: gjirafanews_postgres
+    environment:
+      POSTGRES_USER: gjirafanews
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: gjirafanews
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gjirafanews"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── PgBouncer (connection pooler) ─────────────────────────────────────────
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: gjirafanews_pgbouncer
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: gjirafanews
+      DB_PASSWORD: secret
+      DB_NAME: gjirafanews
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction               # Transaction pooling — best for .NET
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 20                # 20 real PG conns shared among 1000 clients
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      AUTH_TYPE: scram-sha-256
+    ports: ["6432:6432"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   loki:
     image: grafana/loki:3.0.0
     ports: ["3100:3100"]
+
   grafana:
     image: grafana/grafana:11.0.0
     ports: ["3000:3000"]
@@ -18,3 +71,6 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+volumes:
+  postgres_data:
