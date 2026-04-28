@@ -27,8 +27,8 @@ public static class ArticleMappings
         a.ImageUrl,
         a.ReadTime,
         a.PublishedAt,
-        a.Category.ToDto(),
-        a.Source.ToDto(),
+        a.Category?.ToDto(),
+        a.Source?.ToDto(),
         a.Tags.Select(t => t.ToDto()).ToList());
 
     public static ArticleDetailDto ToDetailDto(this Article a) => new(
@@ -40,9 +40,9 @@ public static class ArticleMappings
         a.ImageUrl,
         a.ReadTime,
         a.PublishedAt,
-        a.Category.ToDto(),
-        a.Source.ToDto(),
+        a.Category?.ToDto(),
+        a.Source?.ToDto(),
         a.FeaturedImage?.ToDto(),
-        a.Tags.Select(t => t.ToDto()).ToList(),
-        a.Comments.Select(c => c.ToDto()).ToList());
+        a.Tags?.Select(t => t.ToDto()).ToList(),
+        a.Comments?.Select(c => c.ToDto()).ToList());
 }

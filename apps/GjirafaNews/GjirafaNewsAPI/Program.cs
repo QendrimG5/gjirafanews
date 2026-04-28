@@ -1,19 +1,19 @@
-using System.Security.Claims;
-using System.Text.Json;
 using FluentValidation;
+using GjirafaNewsAPI.Caching;
 using GjirafaNewsAPI.Infrastructure;
 using GjirafaNewsAPI.Infrastructure.Data;
 using GjirafaNewsAPI.Infrastructure.Persistence;
 using GjirafaNewsAPI.Infrastructure.Persistence.Interceptors;
-
 //using GjirafaNewsAPI.Infrastructure.Persistence;
 using GjirafaNewsAPI.Repositories;
 using GjirafaNewsAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
+using StackExchange.Redis;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace GjirafaNewsAPI
 {
@@ -62,6 +62,13 @@ namespace GjirafaNewsAPI
             builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+            builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
+                ?? throw new InvalidOperationException("ConnectionStrings:Redis is required");
+            builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            builder.Services.AddScoped<IRedisService, RedisService>();
 
             ConfigureKeycloakAuth(builder);
             ConfigureCors(builder);

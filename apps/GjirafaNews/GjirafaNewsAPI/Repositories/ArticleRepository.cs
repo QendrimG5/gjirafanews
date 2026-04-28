@@ -33,6 +33,12 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
 //) AS s0 ON a0.id = s0.articles_id
 //ORDER BY a0.published_at DESC, a0.id, c.id, s.id, s0.articles_id, s0.tags_id
 
+    public Task<List<Article>> GetAllForCacheAsync(int max, CancellationToken ct) =>
+        db.Articles
+          .OrderByDescending(a => a.PublishedAt)
+          .Take(max)
+          .ToListAsync(ct);
+
     public Task<Article?> GetByIdAsync(int id) =>
         db.Articles
           //.Include(a => a.Category)

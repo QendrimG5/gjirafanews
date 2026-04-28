@@ -1,6 +1,8 @@
+using GjirafaNewsAPI.Caching;
 using GjirafaNewsAPI.Models.Dtos;
 using GjirafaNewsAPI.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace GjirafaNewsAPI.Controllers;
 
@@ -8,22 +10,58 @@ namespace GjirafaNewsAPI.Controllers;
 [Route("api/[controller]")]
 public class ArticlesController(
     IArticleRepository repo,
-    DapperArticleRepository dapper) : ControllerBase
+    DapperArticleRepository dapper,
+    IRedisService redis,
+    IOptions<CacheOptions> cacheOptions) : ControllerBase
 {
-    // GET /api/articles?page=1 — verify EF Core + global query filter (no deleted)
+    private const string CacheHeader = "X-Cache";
+    private const int PageSize = 20;
+
+    // GET /api/articles?page=1
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, CancellationToken ct = default)
     {
-        var articles = await repo.GetAllAsync(page);
-        return Ok(articles.Select(a => a.ToListDto()).ToList());
+        var cached = await redis.GetArticleListPageAsync(page, PageSize, ct);
+        if (cached is not null)
+        {
+            Response.Headers[CacheHeader] = "HIT";
+            return Ok(cached);
+        }
+
+        var max = cacheOptions.Value.ArticleListMaxSize;
+        var articles = await repo.GetAllForCacheAsync(max, ct);
+        var allDtos = articles.Select(a => a.ToListDto()).ToList();
+
+        await redis.SetArticleListAsync(allDtos, ct);
+
+        var pageDtos = allDtos
+            .Skip((page - 1) * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+        Response.Headers[CacheHeader] = "MISS";
+        return Ok(pageDtos);
     }
 
-    // GET /api/articles/5 — verify eager loading: Category, Source, Tags, Comments, User
+    // GET /api/articles/5
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
     {
+        var cached = await redis.GetArticleDetailAsync(id, ct);
+        if (cached is not null)
+        {
+            Response.Headers[CacheHeader] = "HIT";
+            return Ok(cached);
+        }
+
         var article = await repo.GetByIdAsync(id);
-        return article is null ? NotFound() : Ok(article.ToDetailDto());
+        if (article is null) return NotFound();
+
+        var dto = article.ToDetailDto();
+        await redis.SetArticleDetailAsync(id, dto, ct);
+
+        Response.Headers[CacheHeader] = "MISS";
+        return Ok(dto);
     }
 
     // GET /api/articles/stats — verify GroupBy + aggregate (read_time not read_time_minutes)
@@ -33,9 +71,10 @@ public class ArticlesController(
 
     // DELETE /api/articles/5 — verify soft delete
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        await repo.DeleteAsync(id);  // takes int id — interceptor handles the rest
+        await repo.DeleteAsync(id);
+        await redis.InvalidateArticleAsync(id, ct);
         return NoContent();
     }
 
