@@ -8,7 +8,10 @@
       "PowerShell(Stop-Process *)",
       "Bash(timeout 30 pnpm dev)",
       "Bash(grep -iE \"\\\\.\\(md|mdx|txt\\)$\")",
-      "Bash(timeout 15 pnpm dev)"
+      "Bash(timeout 15 pnpm dev)",
+      "Bash(dotnet add *)",
+      "Bash(dotnet ef *)",
+      "Bash(git add *)"
     ]
   }
 }

@@ -1,12 +1,19 @@
-using System.Security.Claims;
-using System.Text.Json;
 using FluentValidation;
+using GjirafaNewsAPI.Caching;
 using GjirafaNewsAPI.Infrastructure;
+using GjirafaNewsAPI.Infrastructure.Data;
+using GjirafaNewsAPI.Infrastructure.Persistence;
+using GjirafaNewsAPI.Infrastructure.Persistence.Interceptors;
+//using GjirafaNewsAPI.Infrastructure.Persistence;
 using GjirafaNewsAPI.Repositories;
 using GjirafaNewsAPI.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
+using StackExchange.Redis;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace GjirafaNewsAPI
 {
@@ -14,11 +21,11 @@ namespace GjirafaNewsAPI
     {
         private const string AdminWebCorsPolicy = "AdminWebCors";
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
             var lokiUrl = builder.Configuration["Loki:Url"] ?? "http://loki:3100";
+
             builder.Host.UseSerilog((ctx, _, cfg) => cfg
                 .ReadFrom.Configuration(ctx.Configuration)
                 .Enrich.FromLogContext()
@@ -34,14 +41,46 @@ namespace GjirafaNewsAPI
             });
             builder.Services.AddOpenApi();
 
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required");
+
+            // Interceptors must be singletons, registered BEFORE DbContext
+            builder.Services.AddSingleton<AuditTimestampInterceptor>();
+            builder.Services.AddSingleton<SoftDeleteInterceptor>();
+
+            builder.Services.AddDbContext<AppDbContext>((sp, options) => options
+                .UseNpgsql(connectionString)
+                .UseSnakeCaseNamingConvention()
+                //.UseLazyLoadingProxies()
+                .AddInterceptors(
+                    sp.GetRequiredService<AuditTimestampInterceptor>(),
+                    sp.GetRequiredService<SoftDeleteInterceptor>()));
+
+            builder.Services.AddNpgsqlDataSource(connectionString);  // for Dapper
+            builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
+            builder.Services.AddScoped<DapperArticleRepository>();
             builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+            builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
+                ?? throw new InvalidOperationException("ConnectionStrings:Redis is required");
+            builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(redisConnectionString));
+            builder.Services.AddScoped<IRedisService, RedisService>();
 
             ConfigureKeycloakAuth(builder);
             ConfigureCors(builder);
 
             var app = builder.Build();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                await db.Database.MigrateAsync();
+                await DatabaseSeeder.SeedAsync(db);
+            }
 
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -67,7 +106,7 @@ namespace GjirafaNewsAPI
 
             app.MapControllers();
 
-            app.Run();
+            await app.RunAsync();
         }
 
         private static void ConfigureKeycloakAuth(WebApplicationBuilder builder)
