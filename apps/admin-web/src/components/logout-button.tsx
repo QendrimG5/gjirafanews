@@ -1,20 +1,12 @@
-import { useNavigate } from "react-router-dom";
-import { useLogoutMutation } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export default function LogoutButton() {
-  const navigate = useNavigate();
-  const { mutateAsync: logout, isPending } = useLogoutMutation();
-
-  async function handleLogout() {
-    await logout();
-    navigate("/login");
-  }
+  const { logout } = useAuth();
 
   return (
     <button
-      onClick={handleLogout}
-      disabled={isPending}
-      className="text-xs text-white/60 transition-colors hover:text-white disabled:opacity-50"
+      onClick={logout}
+      className="text-xs text-white/60 transition-colors hover:text-white"
     >
       Dil
     </button>

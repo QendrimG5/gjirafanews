@@ -1,13 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "@/lib/session-edge";
 
+const ADMIN_WEB_ORIGIN =
+  process.env.ADMIN_WEB_ORIGIN ?? "http://localhost:3002";
+
+const ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
+const ALLOWED_HEADERS = "Authorization, Content-Type";
+
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  console.log(`Proxy middleware: ${request.method} ${path}`);
+
+  if (path.startsWith("/api")) {
+    const origin = request.headers.get("origin");
+    const isAllowedOrigin = origin === ADMIN_WEB_ORIGIN;
+
+    if (request.method === "OPTIONS") {
+      if (!isAllowedOrigin) {
+        return new NextResponse(null, { status: 403 });
+      }
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": ADMIN_WEB_ORIGIN,
+          "Access-Control-Allow-Methods": ALLOWED_METHODS,
+          "Access-Control-Allow-Headers": ALLOWED_HEADERS,
+          "Access-Control-Max-Age": "86400",
+          Vary: "Origin",
+        },
+      });
+    }
+
+    const response = NextResponse.next();
+    if (isAllowedOrigin) {
+      response.headers.set("Access-Control-Allow-Origin", ADMIN_WEB_ORIGIN);
+      response.headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
+      response.headers.set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
+      response.headers.set("Vary", "Origin");
+    }
+    return response;
+  }
+
   const sessionCookie = request.cookies.get("session")?.value;
   const session = await decrypt(sessionCookie);
 
-  // Protect /admin/* -- require admin role
   if (path.startsWith("/admin")) {
     if (!session?.userId) {
       return NextResponse.redirect(new URL("/login", request.nextUrl));
@@ -17,7 +52,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Redirect logged-in admins away from /login
   if (
     path.startsWith("/login") &&
     session?.userId &&
@@ -30,5 +64,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/login"],
+  matcher: ["/api/:path*", "/admin/:path*", "/login"],
 };

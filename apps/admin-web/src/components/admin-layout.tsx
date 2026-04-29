@@ -1,9 +1,9 @@
 import { Link, Outlet } from "react-router-dom";
-import { useGetMeQuery } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import LogoutButton from "./logout-button";
 
 export default function AdminLayout() {
-  const { data } = useGetMeQuery();
+  const { user } = useAuth();
 
   return (
     <div className="bg-background min-h-screen">
@@ -27,7 +27,7 @@ export default function AdminLayout() {
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-white/50">{data?.user?.name}</span>
+            <span className="text-xs text-white/50">{user?.name}</span>
             <LogoutButton />
           </div>
         </div>
