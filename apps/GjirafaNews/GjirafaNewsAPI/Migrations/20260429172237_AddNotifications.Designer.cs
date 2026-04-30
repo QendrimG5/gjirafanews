@@ -3,6 +3,7 @@ using System;
 using GjirafaNewsAPI.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GjirafaNewsAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260429172237_AddNotifications")]
+    partial class AddNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,38 +183,6 @@ namespace GjirafaNewsAPI.Migrations
                         .HasName("pk_categories");
 
                     b.ToTable("categories", (string)null);
-                });
-
-            modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.ChatMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("text");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("username");
-
-                    b.HasKey("Id")
-                        .HasName("pk_chat_messages");
-
-                    b.HasIndex("CreatedAt")
-                        .IsDescending()
-                        .HasDatabaseName("ix_chat_messages_created_at");
-
-                    b.ToTable("chat_messages", (string)null);
                 });
 
             modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.Comment", b =>

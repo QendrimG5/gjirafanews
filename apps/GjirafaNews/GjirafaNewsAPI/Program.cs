@@ -1,5 +1,6 @@
 using FluentValidation;
 using GjirafaNewsAPI.Caching;
+using GjirafaNewsAPI.Hubs;
 using GjirafaNewsAPI.Infrastructure;
 using GjirafaNewsAPI.Infrastructure.Data;
 using GjirafaNewsAPI.Infrastructure.Persistence;
@@ -40,6 +41,12 @@ namespace GjirafaNewsAPI
                 options.Filters.Add<FluentValidationFilter>();
             });
             builder.Services.AddOpenApi();
+            builder.Services.AddSignalR();
+            builder.Services.AddSingleton<OnlineCounter>();
+            builder.Services.AddSingleton<IDashboardService, DashboardService>();
+            builder.Services.AddHostedService<DashboardBackgroundService>();
+            builder.Services.AddScoped<INotificationStore, NotificationStore>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required");
@@ -105,6 +112,9 @@ namespace GjirafaNewsAPI
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<NotificationsHub>(NotificationsHub.Path);
+            app.MapHub<ChatHub>(ChatHub.Path);
+            app.MapHub<DashboardHub>(DashboardHub.Path);
 
             await app.RunAsync();
         }
@@ -128,7 +138,23 @@ namespace GjirafaNewsAPI
                     options.TokenValidationParameters.RoleClaimType = ClaimTypes.Role;
                     options.Events = new JwtBearerEvents
                     {
-                        OnTokenValidated = FlattenKeycloakRealmRoles
+                        OnTokenValidated = FlattenKeycloakRealmRoles,
+                        // SignalR's WebSocket and ServerSentEvents transports cannot
+                        // attach Authorization headers, so the JS client passes the
+                        // access token in the `access_token` query string instead.
+                        OnMessageReceived = ctx =>
+                        {
+                            var accessToken = ctx.Request.Query["access_token"];
+                            var path = ctx.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) &&
+                                (path.StartsWithSegments(NotificationsHub.Path) ||
+                                 path.StartsWithSegments(ChatHub.Path) ||
+                                 path.StartsWithSegments(DashboardHub.Path)))
+                            {
+                                ctx.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -172,13 +198,17 @@ namespace GjirafaNewsAPI
         private static void ConfigureCors(WebApplicationBuilder builder)
         {
             var adminWebOrigin = builder.Configuration["Cors:AdminWebOrigin"] ?? "http://localhost:3002";
+            var contentWebOrigin = builder.Configuration["Cors:ContentWebOrigin"] ?? "http://localhost:3000";
 
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy(AdminWebCorsPolicy, policy => policy
-                    .WithOrigins(adminWebOrigin)
+                    .WithOrigins(adminWebOrigin, contentWebOrigin)
                     .AllowAnyHeader()
-                    .AllowAnyMethod());
+                    .AllowAnyMethod()
+                    // SignalR with bearer auth requires credentials to be allowed
+                    // so the negotiate request can carry the cookie/token correctly.
+                    .AllowCredentials());
             });
         }
     }

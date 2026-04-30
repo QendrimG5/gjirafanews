@@ -2,6 +2,7 @@ import Link from "next/link";
 import AuthNavLink from "@/components/auth-nav-link";
 import SavedCount from "@/components/saved-count";
 import ThemeToggle from "@/components/theme-toggle";
+import NotificationsNavLink from "@/components/notifications-nav-link";
 
 export default function Navbar() {
   return (
@@ -24,8 +25,15 @@ export default function Navbar() {
           >
             Temat
           </Link>
+          <Link
+            href="/dashboard"
+            className="text-gn-text-secondary hover:text-gn-text text-sm transition-colors"
+          >
+            Dashboard
+          </Link>
           <ThemeToggle />
           <SavedCount />
+          <NotificationsNavLink />
           <AuthNavLink />
         </nav>
       </div>

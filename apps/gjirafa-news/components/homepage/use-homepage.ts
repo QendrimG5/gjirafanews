@@ -1,8 +1,38 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  HubConnection,
+  HubConnectionBuilder,
+  HubConnectionState,
+  LogLevel,
+} from "@microsoft/signalr";
 import type { ArticleWithRelations } from "@gjirafanews/types";
 import type { LiveMessage } from "./types";
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5283";
+const HUB_URL = `${API_URL}/hubs/chat`;
+const HISTORY_URL = `${API_URL}/api/live-chat/messages?limit=100`;
+
+// Server-side ChatMessageDto. CreatedAt is an ISO string; we convert to ms.
+type ServerChatMessage = {
+  id: string;
+  username: string;
+  text: string;
+  createdAt: string;
+  clientId: string | null;
+};
+
+function toLiveMessage(m: ServerChatMessage): LiveMessage {
+  return {
+    id: m.id,
+    username: m.username,
+    text: m.text,
+    timestamp: new Date(m.createdAt).getTime(),
+    _clientId: m.clientId ?? undefined,
+  };
+}
 
 export function useHomePage(
   username: string,
@@ -10,105 +40,99 @@ export function useHomePage(
 ) {
   const liveArticles = initialArticles;
 
-  // ─── Live chat ───
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [connected, setConnected] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const pendingRef = useRef<Map<string, string>>(new Map());
-  const esRef = useRef<EventSource | null>(null);
+  const connectionRef = useRef<HubConnection | null>(null);
 
-  const connect = useCallback(() => {
-    esRef.current?.close();
-
-    const es = new EventSource("/api/live-chat/ws");
-    esRef.current = es;
-
-    es.addEventListener("init", (e) => {
-      const recent: LiveMessage[] = JSON.parse(e.data);
-      setMessages((prev) => {
-        const optimistic = prev.filter((m) => m._optimistic);
-        return [...recent, ...optimistic];
+  // Seed history once on mount.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(HISTORY_URL)
+      .then((res) =>
+        res.ok ? (res.json() as Promise<ServerChatMessage[]>) : []
+      )
+      .then((rows) => {
+        if (cancelled) return;
+        // Server returns newest-first; the chat renders chronologically.
+        const ordered = rows.map(toLiveMessage).reverse();
+        setMessages((prev) => {
+          const optimistic = prev.filter((m) => m._optimistic);
+          return [...ordered, ...optimistic];
+        });
+      })
+      .catch(() => {
+        // Non-fatal — live events still arrive over the hub.
       });
-      setConnected(true);
-    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    es.addEventListener("chat", (e) => {
-      const msg: LiveMessage = JSON.parse(e.data);
+  // Open the SignalR hub connection.
+  useEffect(() => {
+    let cancelled = false;
+    const connection = new HubConnectionBuilder()
+      .withUrl(HUB_URL)
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Warning)
+      .build();
+    connectionRef.current = connection;
 
+    connection.on("chat", (payload: ServerChatMessage) => {
+      if (cancelled) return;
+      const incoming = toLiveMessage(payload);
       setMessages((prev) => {
-        let idx = -1;
-
-        if (msg._clientId) {
-          idx = prev.findIndex(
-            (m) => m._optimistic && m._clientId === msg._clientId
+        // Reconcile optimistic placeholder if this is our own send echoing back.
+        if (incoming._clientId) {
+          const idx = prev.findIndex(
+            (m) => m._optimistic && m._clientId === incoming._clientId,
           );
-        }
-
-        if (idx === -1) {
-          const pending = pendingRef.current;
-          for (const [clientId, serverId] of pending) {
-            if (serverId === msg.id) {
-              pending.delete(clientId);
-              idx = prev.findIndex(
-                (m) => m._optimistic && m._clientId === clientId
-              );
-              break;
-            }
+          if (idx !== -1) {
+            const next = [...prev];
+            next[idx] = { ...incoming, _optimistic: false };
+            return next;
           }
         }
-
-        if (idx === -1) {
-          idx = prev.findIndex(
-            (m) => m._optimistic && m.username === msg.username
-          );
-        }
-
-        if (idx !== -1) {
-          const next = [...prev];
-          next[idx] = {
-            ...prev[idx],
-            _optimistic: false,
-            _clientId: undefined,
-          };
-          return next;
-        }
-
-        return [...prev, msg];
+        // Plain dedup by server id (covers reconnect replays).
+        if (prev.some((m) => m.id === incoming.id)) return prev;
+        return [...prev, incoming];
       });
     });
 
-    es.addEventListener("online", (e) => {
-      const { count } = JSON.parse(e.data);
+    connection.on("online", (count: number) => {
+      if (cancelled) return;
       setOnlineCount(count);
     });
 
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
-  }, []);
+    connection.onreconnecting(() => setConnected(false));
+    connection.onreconnected(() => setConnected(true));
+    connection.onclose(() => {
+      if (!cancelled) setConnected(false);
+    });
 
-  useEffect(() => {
-    connect();
-
-    function handleVisibility() {
-      if (document.visibilityState === "hidden") {
-        console.log("[HomePage] Tab lost focus — closing SSE connection");
-        esRef.current?.close();
-        setConnected(false);
-      } else {
-        console.log("[HomePage] Tab regained focus — reconnecting SSE");
-        connect();
-      }
-    }
-
-    document.addEventListener("visibilitychange", handleVisibility);
+    connection
+      .start()
+      .then(() => {
+        if (!cancelled) setConnected(true);
+      })
+      .catch(() => {
+        if (!cancelled) setConnected(false);
+      });
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      esRef.current?.close();
+      cancelled = true;
+      if (connection.state !== HubConnectionState.Disconnected) {
+        void connection.stop();
+      }
+      if (connectionRef.current === connection) {
+        connectionRef.current = null;
+      }
     };
-  }, [connect]);
+  }, []);
 
+  // Auto-scroll to newest.
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -117,9 +141,12 @@ export function useHomePage(
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
+      const connection = connectionRef.current;
+      if (!connection || connection.state !== HubConnectionState.Connected) {
+        return;
+      }
 
       const clientId = crypto.randomUUID();
-
       const optimistic: LiveMessage = {
         id: clientId,
         username,
@@ -130,24 +157,20 @@ export function useHomePage(
       };
       setMessages((prev) => [...prev, optimistic]);
 
-      fetch("/api/live-chat/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: text.trim(),
+      try {
+        await connection.invoke<ServerChatMessage>("Send", {
           username,
-          _clientId: clientId,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.ok && data.message?.id) {
-            pendingRef.current.set(clientId, data.message.id);
-          }
-        })
-        .catch(() => {});
+          text: text.trim(),
+          clientId,
+        });
+        // The "chat" broadcast that follows will swap the optimistic placeholder
+        // for the server-confirmed message.
+      } catch {
+        // Roll back the optimistic bubble so the user sees their send failed.
+        setMessages((prev) => prev.filter((m) => m._clientId !== clientId));
+      }
     },
-    [username]
+    [username],
   );
 
   return {

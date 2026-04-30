@@ -1,6 +1,7 @@
 using GjirafaNewsAPI.Caching;
 using GjirafaNewsAPI.Models.Dtos;
 using GjirafaNewsAPI.Repositories;
+using GjirafaNewsAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -12,6 +13,7 @@ public class ArticlesController(
     IArticleRepository repo,
     DapperArticleRepository dapper,
     IRedisService redis,
+    INotificationService notifications,
     IOptions<CacheOptions> cacheOptions) : ControllerBase
 {
     private const string CacheHeader = "X-Cache";
@@ -71,10 +73,19 @@ public class ArticlesController(
 
     // DELETE /api/articles/5 — verify soft delete
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
+    public async Task<IActionResult> Delete(
+        int id,
+        [FromServices] IDashboardService dashboard,
+        CancellationToken ct = default)
     {
         await repo.DeleteAsync(id);
         await redis.InvalidateArticleAsync(id, ct);
+        await notifications.NotifyAdminsAsync(
+            title: "Article deleted",
+            message: $"Article #{id} was deleted.",
+            type: "article.deleted",
+            ct);
+        _ = dashboard.PushSnapshotAsync();
         return NoContent();
     }
 
