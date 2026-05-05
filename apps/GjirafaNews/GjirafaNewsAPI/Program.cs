@@ -1,15 +1,22 @@
+using Amazon;
+using Amazon.S3;
 using FluentValidation;
 using GjirafaNewsAPI.Caching;
 using GjirafaNewsAPI.Hubs;
 using GjirafaNewsAPI.Infrastructure;
 using GjirafaNewsAPI.Infrastructure.Data;
 using GjirafaNewsAPI.Infrastructure.Persistence;
+using GjirafaNewsAPI.Infrastructure.Messaging;
 using GjirafaNewsAPI.Infrastructure.Persistence.Interceptors;
+using GjirafaNewsAPI.Infrastructure.Storage;
 //using GjirafaNewsAPI.Infrastructure.Persistence;
 using GjirafaNewsAPI.Repositories;
 using GjirafaNewsAPI.Services;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 using StackExchange.Redis;
@@ -77,6 +84,10 @@ namespace GjirafaNewsAPI
                 ConnectionMultiplexer.Connect(redisConnectionString));
             builder.Services.AddScoped<IRedisService, RedisService>();
 
+            ConfigureS3Storage(builder);
+            ConfigureEmail(builder);
+            ConfigureHangfire(builder, connectionString);
+            ConfigureKafka(builder);
             ConfigureKeycloakAuth(builder);
             ConfigureCors(builder);
 
@@ -116,7 +127,112 @@ namespace GjirafaNewsAPI
             app.MapHub<ChatHub>(ChatHub.Path);
             app.MapHub<DashboardHub>(DashboardHub.Path);
 
+            // Hangfire dashboard. Open in dev; gate with an
+            // IDashboardAuthorizationFilter before going to prod.
+            app.UseHangfireDashboard("/hangfire", new DashboardOptions
+            {
+                DashboardTitle = "GjirafaNews Jobs",
+                Authorization = Array.Empty<Hangfire.Dashboard.IDashboardAuthorizationFilter>(),
+            });
+
+            ConfigureRecurringJobs(app.Services);
+
             await app.RunAsync();
+        }
+
+        private static void ConfigureS3Storage(WebApplicationBuilder builder)
+        {
+            builder.Services.Configure<S3Options>(builder.Configuration.GetSection("S3"));
+
+            builder.Services.AddSingleton<IAmazonS3>(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<S3Options>>().Value;
+                var config = new AmazonS3Config
+                {
+                    ForcePathStyle = opts.ForcePathStyle,
+                };
+                // For S3-compatible endpoints (MinIO, CDN77, LocalStack) the
+                // region label isn't an AWS region — pass it as the SigV4
+                // signing scope via AuthenticationRegion instead of trying to
+                // resolve it as a RegionEndpoint.
+                if (!string.IsNullOrWhiteSpace(opts.ServiceUrl))
+                {
+                    config.ServiceURL = opts.ServiceUrl;
+                    if (!string.IsNullOrWhiteSpace(opts.Region))
+                    {
+                        config.AuthenticationRegion = opts.Region;
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(opts.Region))
+                {
+                    config.RegionEndpoint = RegionEndpoint.GetBySystemName(opts.Region);
+                }
+                return new AmazonS3Client(config);
+            });
+
+            builder.Services.AddScoped<IStorageService, S3StorageService>();
+        }
+
+        private static void ConfigureEmail(WebApplicationBuilder builder)
+        {
+            builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+            builder.Services.AddScoped<IEmailService, MailKitEmailService>();
+        }
+
+        private static void ConfigureKafka(WebApplicationBuilder builder)
+        {
+            builder.Services.Configure<KafkaOptions>(builder.Configuration.GetSection("Kafka"));
+
+            // Producer is thread-safe and pools connections internally — keep
+            // a single instance for the lifetime of the process.
+            builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
+
+            // Shared in-memory ring buffer between the consumer worker and the
+            // controller's GET endpoint.
+            builder.Services.AddSingleton(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<KafkaOptions>>().Value;
+                return new MessageLog(opts.RecentBufferSize);
+            });
+
+            builder.Services.AddHostedService<KafkaConsumerWorker>();
+        }
+
+        private static void ConfigureRecurringJobs(IServiceProvider services)
+        {
+            var recurring = services.GetRequiredService<IRecurringJobManager>();
+
+            // Every 3 minutes: persist a notification row and push it to all
+            // connected SignalR clients. INotificationService.BroadcastAsync
+            // handles both the AppDbContext insert and the hub broadcast.
+            recurring.AddOrUpdate<INotificationService>(
+                "scheduled-notification",
+                svc => svc.BroadcastAsync(
+                    "Njoftim periodik",
+                    "Mesazh i planifikuar nga Hangfire.",
+                    "scheduled",
+                    default),
+                "*/3 * * * *");
+        }
+
+        private static void ConfigureHangfire(WebApplicationBuilder builder, string connectionString)
+        {
+            // Hangfire's PostgreSQL storage uses prepared statements that don't
+            // play nice with PgBouncer transaction pooling, so it gets the same
+            // direct-Postgres connection that EF migrations use.
+            var hangfireConnection = builder.Configuration.GetConnectionString("Hangfire")
+                ?? connectionString;
+
+            builder.Services.AddHangfire(cfg => cfg
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(opts => opts.UseNpgsqlConnection(hangfireConnection)));
+
+            builder.Services.AddHangfireServer(opts =>
+            {
+                opts.WorkerCount = Math.Max(2, Environment.ProcessorCount);
+            });
         }
 
         private static void ConfigureKeycloakAuth(WebApplicationBuilder builder)

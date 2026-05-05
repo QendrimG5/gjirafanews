@@ -27,7 +27,12 @@
       "Bash(pnpm --filter @gjirafanews/admin-web remove @microsoft/signalr)",
       "Bash(pnpm --filter @gjirafanews/gjirafa-news add @microsoft/signalr)",
       "Bash(curl *)",
-      "Bash(docker exec *)"
+      "Bash(docker exec *)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet build *)",
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(git fetch *)"
     ]
   }
 }

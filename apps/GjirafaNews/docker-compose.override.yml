@@ -4,6 +4,15 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_URLS=http://+:8080
+      # CDN77 Object Storage (S3-compatible)
+      - S3__Bucket=florent
+      - S3__ServiceUrl=https://eu-1.cdn77-storage.com
+      - S3__ForcePathStyle=true
+      - S3__Region=eu-1
+      - S3__PublicRead=true
+      - AWS_ACCESS_KEY_ID=
+      - AWS_SECRET_ACCESS_KEY=
+      - AWS_REGION=eu-1
     ports:
       - "8080:8080"
     volumes:

@@ -11,7 +11,7 @@ import type { ArticleWithRelations } from "@gjirafanews/types";
 import type { LiveMessage } from "./types";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5283";
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const HUB_URL = `${API_URL}/hubs/chat`;
 const HISTORY_URL = `${API_URL}/api/live-chat/messages?limit=100`;
 

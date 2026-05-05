@@ -18,7 +18,7 @@ import {
 } from "@microsoft/signalr";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5283";
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 const HUB_URL = `${API_URL}/hubs/notifications`;
 
 const MAX_NOTIFICATIONS = 100;
