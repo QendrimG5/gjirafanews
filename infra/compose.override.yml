@@ -1,0 +1,12 @@
+# Local-only overrides. Auto-loaded when running `docker compose` from the
+# infra/ folder. Ignored by CI.
+#
+# Examples:
+#   - mount source for hot-reload during dev
+#   - override the S3 backend to a real bucket (e.g. CDN77) instead of MinIO
+#   - increase log levels for a specific service
+#
+# Stay slim. If you find yourself adding lots of services here, that's a sign
+# something belongs in compose.yml proper.
+
+services: {}

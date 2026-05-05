@@ -1,0 +1,31 @@
+{
+  "name": "@gjirafanews/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3002",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --port 3002"
+  },
+  "dependencies": {
+    "@gjirafanews/types": "workspace:*",
+    "@gjirafanews/ui": "workspace:*",
+    "@gjirafanews/utils": "workspace:*",
+    "@tanstack/react-query": "^5.96.0",
+    "@tanstack/react-virtual": "^3.13.23",
+    "keycloak-js": "^26.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-router-dom": "^7.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.5.2",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^6.3.0"
+  }
+}

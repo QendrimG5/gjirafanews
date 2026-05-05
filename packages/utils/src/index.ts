@@ -20,19 +20,34 @@ export function getArticleWithRelations(
   return { ...article, category, source };
 }
 
+const RTF = new Intl.RelativeTimeFormat("sq-AL", { numeric: "auto" });
+
+const TIME_UNITS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
+  ["year", 60 * 60 * 24 * 365],
+  ["month", 60 * 60 * 24 * 30],
+  ["week", 60 * 60 * 24 * 7],
+  ["day", 60 * 60 * 24],
+  ["hour", 60 * 60],
+  ["minute", 60],
+  ["second", 1],
+];
+
 /**
- * Formats a date string as a relative time label (e.g. "5m", "3h", "2d").
+ * Formats a date as Albanian relative time (e.g. "5 minuta më parë", "para 3 orësh").
+ * Uses Intl.RelativeTimeFormat — proper localization, no missing-space bugs.
+ *
+ * @param date  Date | ISO string | epoch millis
+ * @param now   Reference time for testability; defaults to current time.
  */
-export function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 60) return `${diffMins} minutes ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}hours ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}days ago`;
+export function timeAgo(date: Date | string | number, now: Date = new Date()): string {
+  const target = date instanceof Date ? date : new Date(date);
+  const diffSec = Math.round((target.getTime() - now.getTime()) / 1000);
+  for (const [unit, seconds] of TIME_UNITS) {
+    if (Math.abs(diffSec) >= seconds || unit === "second") {
+      return RTF.format(Math.round(diffSec / seconds), unit);
+    }
+  }
+  return RTF.format(0, "second");
 }
 
 /**

@@ -1,21 +1,20 @@
 {
   "name": "gjirafanews-monorepo",
   "private": true,
+  "packageManager": "pnpm@10.24.0",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "pnpm -r --parallel run dev",
-    "dev:gjirafa": "npm run dev -w apps/gjirafa-news",
-    "dev:pulse": "npm run dev -w apps/pulse-news",
-    "dev:admin": "npm run dev -w apps/admin-web",
-    "dev:admin2": "npm run dev -w apps/admin-web2",
-    "build": "npm run build -w apps/gjirafa-news",
-    "start": "npm run start -w apps/gjirafa-news",
-    "lint": "npm run lint -w apps/gjirafa-news",
-    "test": "npm run test -w apps/gjirafa-news",
-    "test:e2e": "npm run test:e2e -w apps/gjirafa-news",
+    "dev:web": "pnpm --filter @gjirafanews/web dev",
+    "dev:admin": "pnpm --filter @gjirafanews/admin dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r run test",
+    "test:e2e": "pnpm --filter @gjirafanews/web test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json}\""
   }
 }

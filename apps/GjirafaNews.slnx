@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="api/GjirafaNewsAPI.csproj" />
+  <Project Path="api-tests/GjirafaNews.Tests.csproj" Id="cb723794-d74a-4ebd-9a40-77f4a356033d" />
+</Solution>

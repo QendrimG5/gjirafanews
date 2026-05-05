@@ -1,0 +1,282 @@
+name: gjirafanews
+
+# Profile-driven stack:
+#   --profile infra         backing services only (postgres, redis, keycloak, minio, kafka, papercut)
+#   --profile api           infra + the .NET API
+#   --profile web           infra + api + web + admin (full stack)
+#   --profile observability optional: loki, grafana, kafka-ui
+#
+# Run from the infra/ folder:  docker compose --profile web up -d
+
+services:
+  # ── Postgres (app DB) ────────────────────────────────────────────────────
+  postgres:
+    profiles: [infra, api, web]
+    image: postgres:16-alpine
+    container_name: gjirafanews_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── PgBouncer (transaction pooler) ───────────────────────────────────────
+  pgbouncer:
+    profiles: [infra, api, web]
+    image: edoburu/pgbouncer:latest
+    container_name: gjirafanews_pgbouncer
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      AUTH_TYPE: scram-sha-256
+    ports: ["6432:6432"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # ── Redis (cache) ────────────────────────────────────────────────────────
+  redis:
+    profiles: [infra, api, web]
+    image: redis:7-alpine
+    container_name: gjirafanews_redis
+    ports: ["6379:6379"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Keycloak (auth) ──────────────────────────────────────────────────────
+  keycloak-db:
+    profiles: [infra, web]
+    image: postgres:16-alpine
+    container_name: gjirafanews_keycloak_db
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KC_DB_USER}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KC_DB_USER} -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    profiles: [infra, web]
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: gjirafanews_keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: ${KC_DB_USER}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports: ["8081:8080"]                       # host 8081 → container 8080 (no clash with api)
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    depends_on:
+      keycloak-db: { condition: service_healthy }
+
+  # ── MinIO (local S3) ─────────────────────────────────────────────────────
+  minio:
+    profiles: [infra, api, web]
+    image: minio/minio:latest
+    container_name: gjirafanews_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"      # S3 API
+      - "9001:9001"      # Console UI
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-shot: create the bucket and grant public-read on objects.
+  # API depends on this completing successfully.
+  minio-init:
+    profiles: [infra, api, web]
+    image: minio/mc:latest
+    container_name: gjirafanews_minio_init
+    depends_on:
+      minio: { condition: service_healthy }
+    entrypoint:
+      - sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"; do sleep 1; done
+        mc mb -p local/$$S3_BUCKET || true
+        mc anonymous set download local/$$S3_BUCKET || true
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${S3_BUCKET}
+    restart: "no"
+
+  # ── Kafka (KRaft, single broker, dev only) ───────────────────────────────
+  kafka:
+    profiles: [infra, api, web]
+    image: apache/kafka:3.8.0
+    container_name: gjirafanews_kafka
+    ports:
+      - "9094:9094"      # external listener for host tooling
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      CLUSTER_ID: "gjirafanews-kraft-cluster"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ── Papercut SMTP (dev mail catcher) ─────────────────────────────────────
+  papercut:
+    profiles: [infra, api, web]
+    image: changemakerstudiosus/papercut-smtp:latest
+    container_name: gjirafanews_papercut
+    ports:
+      - "2525:2525"      # SMTP — apps inside the network use papercut:2525
+      - "37408:8080"     # Web UI — open http://localhost:37408 to read mail
+    restart: unless-stopped
+
+  # ── API (.NET 10) ────────────────────────────────────────────────────────
+  api:
+    profiles: [api, web]
+    container_name: gjirafanews_api
+    image: ${DOCKER_REGISTRY-}gjirafanewsapi
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    ports: ["5283:8080"]                          # host 5283 matches launchSettings dev profile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_URLS: "http://+:8080"
+      # Migrations run via direct postgres (PgBouncer transaction pooling breaks EF migrations).
+      ConnectionStrings__DefaultConnection: ${API_PG_CONN}
+      ConnectionStrings__Hangfire: ${API_PG_HANGFIRE_CONN}
+      ConnectionStrings__Redis: ${API_REDIS_CONN}
+      Cors__AllowedOrigins: ${API_CORS_ORIGINS}
+      Loki__Url: http://loki:3100
+      S3__ServiceUrl: ${API_S3_SERVICE_URL}
+      S3__Bucket: ${API_S3_BUCKET}
+      S3__ForcePathStyle: "true"
+      S3__Region: ${API_S3_REGION}
+      S3__PublicRead: "true"
+      AWS_ACCESS_KEY_ID: ${API_S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${API_S3_SECRET_KEY}
+      AWS_REGION: ${API_S3_REGION}
+      Email__Host: ${API_SMTP_HOST}
+      Email__Port: ${API_SMTP_PORT}
+      Kafka__BootstrapServers: ${API_KAFKA_BROKERS}
+      Keycloak__Authority: ${API_KEYCLOAK_AUTHORITY}
+    depends_on:
+      postgres:    { condition: service_healthy }
+      pgbouncer:   { condition: service_started }
+      redis:       { condition: service_healthy }
+      kafka:       { condition: service_healthy }
+      papercut:    { condition: service_started }
+      minio-init:  { condition: service_completed_successfully }
+
+  # ── Web (Next.js public site) ────────────────────────────────────────────
+  web:
+    profiles: [web]
+    container_name: gjirafanews_web
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+      NEXT_PUBLIC_KEYCLOAK_URL: ${NEXT_PUBLIC_KEYCLOAK_URL}
+    depends_on:
+      api: { condition: service_started }
+
+  # ── Admin (Vite + nginx) ─────────────────────────────────────────────────
+  admin:
+    profiles: [web]
+    container_name: gjirafanews_admin
+    build:
+      context: ..
+      dockerfile: apps/admin/Dockerfile
+    ports: ["3002:80"]
+    depends_on:
+      api: { condition: service_started }
+
+  # ── Observability (opt-in) ───────────────────────────────────────────────
+  loki:
+    profiles: [observability]
+    image: grafana/loki:3.0.0
+    container_name: gjirafanews_loki
+    ports: ["3100:3100"]
+
+  grafana:
+    profiles: [observability]
+    image: grafana/grafana:11.0.0
+    container_name: gjirafanews_grafana
+    ports: ["3300:3000"]                          # fix: grafana listens on 3000 inside the container
+    depends_on: [loki]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+
+  kafka-ui:
+    profiles: [observability]
+    image: provectuslabs/kafka-ui:latest
+    container_name: gjirafanews_kafka_ui
+    ports: ["8090:8080"]
+    environment:
+      KAFKA_CLUSTERS_0_NAME: gjirafanews
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+    depends_on: [kafka]
+
+volumes:
+  postgres_data:
+  keycloak_db_data:
+  minio_data:
+  kafka_data:

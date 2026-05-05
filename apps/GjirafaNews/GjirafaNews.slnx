@@ -1,7 +1,0 @@
-<Solution>
-  <Project Path="../GjirafaNews.Tests/GjirafaNews.Tests.csproj" Id="cb723794-d74a-4ebd-9a40-77f4a356033d" />
-  <Project Path="docker-compose.dcproj">
-    <Build />
-  </Project>
-  <Project Path="GjirafaNewsAPI/GjirafaNewsAPI.csproj" />
-</Solution>
