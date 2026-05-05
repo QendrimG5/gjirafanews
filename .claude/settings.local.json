@@ -12,7 +12,28 @@
       "Bash(timeout 15 pnpm dev)",
       "Bash(dotnet add *)",
       "Bash(dotnet ef *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)",
+      "Bash(pnpm dev *)",
+      "Bash(pnpm install *)",
+      "Bash(curl -sS -o /dev/null -w \"frontend http=%{http_code}\\\\n\" http://localhost:3002)",
+      "Bash(curl -sS -o /dev/null -w \"api http=%{http_code}\\\\n\" http://localhost:8080)",
+      "Bash(curl -sS -o /dev/null -w \"swagger=%{http_code}\\\\n\" http://localhost:8080/swagger)",
+      "Bash(curl -sS -o /dev/null -w \"api/articles=%{http_code}\\\\n\" http://localhost:8080/api/articles)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Get-CimInstance *)",
+      "Bash(pnpm --filter @gjirafanews/admin-web add @microsoft/signalr)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm --filter @gjirafanews/admin-web remove @microsoft/signalr)",
+      "Bash(pnpm --filter @gjirafanews/gjirafa-news add @microsoft/signalr)",
+      "Bash(curl *)",
+      "Bash(docker exec *)",
+      "Bash(dotnet --version)",
+      "Bash(dotnet build *)",
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(git fetch *)"
     ]
   }
 }
