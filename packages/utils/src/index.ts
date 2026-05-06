@@ -57,3 +57,5 @@ export function createIdGenerator(prefix: string, startAt: number) {
   let counter = startAt;
   return () => `${prefix}${++counter}`;
 }
+
+export { slugify } from "./slugify";

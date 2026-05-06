@@ -27,9 +27,7 @@ export default function CategoriesPage() {
       setName("");
       setColor("#1a7f37");
     } catch (err: unknown) {
-      const msg =
-        (err as { data?: { error?: string } })?.data?.error ??
-        "Gabim gjate krijimit.";
+      const msg = err instanceof Error ? err.message : "Gabim gjate krijimit.";
       setError(msg);
     }
   }
@@ -43,10 +41,7 @@ export default function CategoriesPage() {
     try {
       await deleteMut.mutateAsync(id);
     } catch (err: unknown) {
-      alert(
-        (err as { data?: { error?: string } })?.data?.error ??
-        "Gabim gjate fshirjes.",
-      );
+      alert(err instanceof Error ? err.message : "Gabim gjate fshirjes.");
     }
   }
 

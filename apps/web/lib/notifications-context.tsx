@@ -16,9 +16,9 @@ import {
   HubConnectionState,
   LogLevel,
 } from "@microsoft/signalr";
+import { env } from "@/lib/env";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = env.NEXT_PUBLIC_API_BASE_URL;
 const HUB_URL = `${API_URL}/hubs/notifications`;
 
 const MAX_NOTIFICATIONS = 100;

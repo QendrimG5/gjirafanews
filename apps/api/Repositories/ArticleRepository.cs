@@ -35,18 +35,21 @@ public class ArticleRepository(AppDbContext db) : IArticleRepository
 
     public Task<List<Article>> GetAllForCacheAsync(int max, CancellationToken ct) =>
         db.Articles
+          .Include(a => a.Category)
+          .Include(a => a.Source)
+          .Include(a => a.Tags)
           .OrderByDescending(a => a.PublishedAt)
           .Take(max)
           .ToListAsync(ct);
 
     public Task<Article?> GetByIdAsync(int id) =>
         db.Articles
-          //.Include(a => a.Category)
-          //.Include(a => a.Source)
-          //.Include(a => a.Tags)
-          //.Include(a => a.FeaturedImage)
-          //.Include(a => a.Comments.Where(c => !c.IsDeleted))  // filtered Include
-          //    .ThenInclude(c => c.User)                        // nested
+          .Include(a => a.Category)
+          .Include(a => a.Source)
+          .Include(a => a.Tags)
+          .Include(a => a.FeaturedImage)
+          .Include(a => a.Comments.Where(c => !c.IsDeleted))
+              .ThenInclude(c => c.User)
           .FirstOrDefaultAsync(a => a.Id == id);
 
 

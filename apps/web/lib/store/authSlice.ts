@@ -1,30 +1,14 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { SafeUser } from "@gjirafanews/types";
+// Stub: auth state lives in Auth.js / next-auth's useSession() hook now.
+// This slice exists only to satisfy configureStore's "must have a reducer"
+// requirement; nothing reads or writes the store. Once a real reducer is
+// added, drop this file.
 
-type AuthState = {
-  user: SafeUser | null;
-  isAuthenticated: boolean;
-};
+import { createSlice } from "@reduxjs/toolkit";
 
-const initialState: AuthState = {
-  user: null,
-  isAuthenticated: false,
-};
-
-const authSlice = createSlice({
-  name: "auth",
-  initialState,
-  reducers: {
-    setUser(state, action: PayloadAction<SafeUser>) {
-      state.user = action.payload;
-      state.isAuthenticated = true;
-    },
-    clearUser(state) {
-      state.user = null;
-      state.isAuthenticated = false;
-    },
-  },
+const stubSlice = createSlice({
+  name: "stub",
+  initialState: {},
+  reducers: {},
 });
 
-export const { setUser, clearUser } = authSlice.actions;
-export default authSlice.reducer;
+export default stubSlice.reducer;

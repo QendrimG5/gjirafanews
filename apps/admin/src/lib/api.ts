@@ -1,62 +1,104 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  ArticleWithRelationsResponse,
-  CreateArticleRequest,
-  CategoryWithCount,
-  CreateCategoryRequest,
-  Category,
-  SourceResponse,
-} from "@gjirafanews/types";
+import {
+  createApiClient,
+  type ArticleListDto,
+  type ArticleDetailDto,
+  type CategoryWithCountDto,
+  type SourceDto,
+  type CreateArticleRequest as CreateArticleDto,
+} from "@gjirafanews/api-client";
+import { slugify } from "@gjirafanews/utils";
 import { getAccessToken } from "./keycloak";
 
-export type {
-  ArticleWithRelationsResponse,
-  CreateArticleRequest,
-} from "@gjirafanews/types";
+const API_URL = import.meta.env.VITE_API_URL;
 
-const AUTH_API_URL = import.meta.env.VITE_API_URL;
-const CONTENT_API_URL = import.meta.env.VITE_CONTENT_API_URL;
+export const apiClient = createApiClient({
+  baseUrl: API_URL,
+  getToken: () => getAccessToken(),
+});
 
-// Shape returned by the .NET ApiResponse<T> envelope
-type NetApiResponse<T> = {
-  success: boolean;
-  data: T | null;
-  message?: string;
-  errors?: Array<{ field?: string; message: string }>;
+// ─── UI types — string ids for legacy components ─────────────────────────
+
+export type ArticleFormData = {
+  title: string;
+  summary: string;
+  content: string;
+  imageUrl: string;
+  categoryId: string;
+  sourceId: string;
+  readTime: number;
 };
 
-async function authorizedFetch<T>(
-  base: string,
-  path: string,
-  options?: RequestInit,
-): Promise<T> {
-  const token = await getAccessToken();
-  const headers = new Headers(options?.headers);
-  if (options?.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+// Match the legacy `ArticleWithRelations` shape from @gjirafanews/types so the
+// shared ArticlesTable component (which still expects string ids and
+// content/categoryId/sourceId fields) keeps working unchanged.
+export type ArticleListItem = {
+  id: string;
+  title: string;
+  summary: string;
+  content: string;
+  imageUrl: string;
+  publishedAt: string;
+  readTime: number;
+  categoryId: string;
+  sourceId: string;
+  category: { id: string; name: string; slug: string; color: string };
+  source: { id: string; name: string; url: string };
+};
 
-  const res = await fetch(`${base}${path}`, { ...options, headers });
-  const data = res.status === 204 ? null : await res.json();
+export type ArticleDetailItem = ArticleListItem;
 
-  if (!res.ok) {
-    throw { status: res.status, data };
-  }
-
-  return data as T;
+function listDtoToItem(dto: ArticleListDto): ArticleListItem {
+  return {
+    id: String(dto.id),
+    title: dto.title,
+    summary: dto.summary,
+    content: "",
+    imageUrl: dto.imageUrl,
+    publishedAt: dto.publishedAt,
+    readTime: dto.readTime,
+    categoryId: String(dto.category.id),
+    sourceId: String(dto.source.id),
+    category: {
+      id: String(dto.category.id),
+      name: dto.category.name,
+      slug: dto.category.slug,
+      color: dto.category.color,
+    },
+    source: {
+      id: String(dto.source.id),
+      name: dto.source.name,
+      url: dto.source.url,
+    },
+  };
 }
 
-// apiAuth → .NET API (http://localhost:5283). Used for /users and auth-related endpoints.
-function apiAuth<T>(path: string, options?: RequestInit): Promise<T> {
-  return authorizedFetch<T>(AUTH_API_URL, path, options);
+function detailDtoToItem(dto: ArticleDetailDto): ArticleDetailItem {
+  return {
+    ...listDtoToItem(dto),
+    content: dto.content,
+  };
 }
 
-// apiContent → Next.js API (http://localhost:3000/api). Used for articles/categories/sources
-// until those endpoints are migrated to .NET.
-function apiContent<T>(path: string, options?: RequestInit): Promise<T> {
-  return authorizedFetch<T>(CONTENT_API_URL, path, options);
+function categoryDtoToWithCount(dto: CategoryWithCountDto) {
+  return {
+    id: String(dto.id),
+    name: dto.name,
+    slug: dto.slug,
+    color: dto.color,
+    articleCount: dto.articleCount,
+  };
 }
+
+function sourceDtoToItem(dto: SourceDto) {
+  return {
+    id: String(dto.id),
+    name: dto.name,
+    url: dto.url,
+  };
+}
+
+// ─── Query keys ──────────────────────────────────────────────────────────
 
 export const queryKeys = {
   auth: { me: ["auth", "me"] as const },
@@ -78,20 +120,19 @@ export type CurrentUser = {
 export function useGetMeQuery() {
   return useQuery({
     queryKey: queryKeys.auth.me,
-    queryFn: async () => {
-      const res = await apiAuth<NetApiResponse<CurrentUser>>("/users/me");
-      return res.data;
-    },
+    queryFn: () => apiClient.users.me(),
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-// Article hooks
 export function useGetArticlesQuery() {
   return useQuery({
     queryKey: queryKeys.articles.all,
-    queryFn: () => apiContent<ArticleWithRelationsResponse[]>("/articles"),
+    queryFn: async () => {
+      const dtos = await apiClient.articles.list({ page: 1 });
+      return dtos.map(listDtoToItem);
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -99,20 +140,28 @@ export function useGetArticlesQuery() {
 export function useGetArticleQuery(id: string) {
   return useQuery({
     queryKey: queryKeys.articles.detail(id),
-    queryFn: () =>
-      apiContent<ArticleWithRelationsResponse>(`/articles/${id}`),
-    enabled: !!id,
+    queryFn: async () => detailDtoToItem(await apiClient.articles.get(Number(id))),
+    enabled: !!id && Number.isFinite(Number(id)),
   });
+}
+
+function formToCreateDto(data: ArticleFormData): CreateArticleDto {
+  return {
+    title: data.title,
+    summary: data.summary,
+    content: data.content,
+    imageUrl: data.imageUrl || undefined,
+    categoryId: Number(data.categoryId),
+    sourceId: Number(data.sourceId),
+    readTime: data.readTime,
+  };
 }
 
 export function useCreateArticleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (article: CreateArticleRequest) =>
-      apiContent<ArticleWithRelationsResponse>("/articles", {
-        method: "POST",
-        body: JSON.stringify(article),
-      }),
+    mutationFn: (data: ArticleFormData) =>
+      apiClient.articles.create(formToCreateDto(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
@@ -122,22 +171,11 @@ export function useCreateArticleMutation() {
 export function useUpdateArticleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Partial<CreateArticleRequest>;
-    }) =>
-      apiContent<ArticleWithRelationsResponse>(`/articles/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
+    mutationFn: ({ id, data }: { id: string; data: ArticleFormData }) =>
+      apiClient.articles.update(Number(id), formToCreateDto(data)),
     onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.articles.detail(id),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.articles.detail(id) });
     },
   });
 }
@@ -145,10 +183,7 @@ export function useUpdateArticleMutation() {
 export function useDeleteArticleMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiContent<{ message: string; id: string }>(`/articles/${id}`, {
-        method: "DELETE",
-      }),
+    mutationFn: (id: string) => apiClient.articles.delete(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.articles.all });
     },
@@ -158,18 +193,24 @@ export function useDeleteArticleMutation() {
 export function useGetCategoriesQuery() {
   return useQuery({
     queryKey: queryKeys.categories,
-    queryFn: () => apiContent<CategoryWithCount[]>("/categories"),
+    queryFn: async () => {
+      const dtos = await apiClient.categories.list();
+      return dtos.map(categoryDtoToWithCount);
+    },
     staleTime: 10 * 60 * 1000,
   });
 }
 
+export type CreateCategoryFormData = { name: string; color: string; slug?: string };
+
 export function useCreateCategoryMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: CreateCategoryRequest) =>
-      apiContent<Category>("/categories", {
-        method: "POST",
-        body: JSON.stringify(payload),
+    mutationFn: (data: CreateCategoryFormData) =>
+      apiClient.categories.create({
+        name: data.name,
+        slug: data.slug || slugify(data.name),
+        color: data.color,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories });
@@ -180,10 +221,7 @@ export function useCreateCategoryMutation() {
 export function useDeleteCategoryMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiContent<{ message: string; id: string }>(`/categories/${id}`, {
-        method: "DELETE",
-      }),
+    mutationFn: (id: string) => apiClient.categories.delete(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories });
     },
@@ -193,7 +231,10 @@ export function useDeleteCategoryMutation() {
 export function useGetSourcesQuery() {
   return useQuery({
     queryKey: queryKeys.sources,
-    queryFn: () => apiContent<SourceResponse[]>("/sources"),
+    queryFn: async () => {
+      const dtos = await apiClient.sources.list();
+      return dtos.map(sourceDtoToItem);
+    },
     staleTime: 10 * 60 * 1000,
   });
 }
