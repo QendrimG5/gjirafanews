@@ -6,8 +6,9 @@
 // response header — without that, the browser cannot read the part ETag
 // needed to complete the upload.
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+import { env } from "@/lib/env";
+
+const API_URL = env.NEXT_PUBLIC_API_BASE_URL;
 
 // S3 requires every part except the last to be at least 5 MiB.
 export const MIN_PART_SIZE = 5 * 1024 * 1024;

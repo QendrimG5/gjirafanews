@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { env } from "@/lib/env";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = env.NEXT_PUBLIC_API_BASE_URL;
 
 type Status = "idle" | "sending" | "sent" | "error";
 

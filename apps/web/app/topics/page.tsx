@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { categories, articles } from "@/lib/data";
+import { api } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Temat",
@@ -13,11 +13,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function TopicsPage() {
-  const categoriesWithCount = categories.map((cat) => ({
-    ...cat,
-    articleCount: articles.filter((a) => a.categoryId === cat.id).length,
-  }));
+export const dynamic = "force-dynamic";
+
+export default async function TopicsPage() {
+  const categories = await api.categories.list();
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-8">
@@ -27,7 +26,7 @@ export default function TopicsPage() {
       </p>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {categoriesWithCount.map((cat) => (
+        {categories.map((cat) => (
           <Link
             key={cat.id}
             href={`/category/${cat.slug}`}

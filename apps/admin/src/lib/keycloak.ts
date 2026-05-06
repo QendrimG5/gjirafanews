@@ -1,4 +1,4 @@
-import Keycloak from "keycloak-js";
+import { createKeycloak } from "@gjirafanews/auth/spa";
 
 export type AuthUser = {
   userId: string;
@@ -25,7 +25,7 @@ if (!url || !realm || !clientId) {
   );
 }
 
-export const keycloak = new Keycloak({ url, realm, clientId });
+export const keycloak = createKeycloak({ url, realm, clientId });
 
 let initPromise: Promise<boolean> | null = null;
 
@@ -53,8 +53,7 @@ export function toAuthUser(): AuthUser | null {
   };
 }
 
-// Called before every API request. Refreshes the access token if it expires
-// within 30 seconds. Falls back to a full login if the refresh token is gone.
+// Refreshes the access token if it expires within 30 seconds.
 export async function getAccessToken(): Promise<string | undefined> {
   if (!keycloak.authenticated) return undefined;
   try {

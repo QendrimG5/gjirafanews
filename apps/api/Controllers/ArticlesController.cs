@@ -1,8 +1,12 @@
 using GjirafaNewsAPI.Caching;
+using GjirafaNewsAPI.Domain.Entities;
+using GjirafaNewsAPI.Infrastructure.Persistence;
 using GjirafaNewsAPI.Models.Dtos;
 using GjirafaNewsAPI.Repositories;
 using GjirafaNewsAPI.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace GjirafaNewsAPI.Controllers;
@@ -14,7 +18,8 @@ public class ArticlesController(
     DapperArticleRepository dapper,
     IRedisService redis,
     INotificationService notifications,
-    IOptions<CacheOptions> cacheOptions) : ControllerBase
+    IOptions<CacheOptions> cacheOptions,
+    AppDbContext db) : ControllerBase
 {
     private const string CacheHeader = "X-Cache";
     private const int PageSize = 20;
@@ -71,6 +76,73 @@ public class ArticlesController(
     public async Task<IActionResult> Stats() =>
         Ok(await repo.GetCategoryStatsAsync());
 
+    // POST /api/articles
+    [HttpPost]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<ActionResult<ArticleDetailDto>> Create(
+        [FromBody] CreateArticleRequest request,
+        CancellationToken ct = default)
+    {
+        if (!await db.Categories.AnyAsync(c => c.Id == request.CategoryId, ct))
+            return BadRequest(new { error = "Invalid categoryId" });
+        if (!await db.Sources.AnyAsync(s => s.Id == request.SourceId, ct))
+            return BadRequest(new { error = "Invalid sourceId" });
+
+        var slug = await GenerateUniqueSlugAsync(request.Title, ignoreId: null, ct);
+        var entity = new Article
+        {
+            Title = request.Title,
+            Slug = slug,
+            Summary = request.Summary,
+            Content = request.Content,
+            ImageUrl = request.ImageUrl ?? "https://picsum.photos/seed/new/800/400",
+            ReadTime = request.ReadTime ?? 3,
+            PublishedAt = DateTime.UtcNow,
+            CategoryId = request.CategoryId,
+            SourceId = request.SourceId,
+        };
+        db.Articles.Add(entity);
+        await db.SaveChangesAsync(ct);
+
+        await redis.InvalidateArticleAsync(entity.Id, ct);
+        var created = await repo.GetByIdAsync(entity.Id);
+        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, created!.ToDetailDto());
+    }
+
+    // PUT /api/articles/5
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<ActionResult<ArticleDetailDto>> Update(
+        int id,
+        [FromBody] UpdateArticleRequest request,
+        CancellationToken ct = default)
+    {
+        var entity = await db.Articles.FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (entity is null) return NotFound();
+
+        if (!await db.Categories.AnyAsync(c => c.Id == request.CategoryId, ct))
+            return BadRequest(new { error = "Invalid categoryId" });
+        if (!await db.Sources.AnyAsync(s => s.Id == request.SourceId, ct))
+            return BadRequest(new { error = "Invalid sourceId" });
+
+        if (entity.Title != request.Title)
+        {
+            entity.Slug = await GenerateUniqueSlugAsync(request.Title, ignoreId: id, ct);
+        }
+        entity.Title = request.Title;
+        entity.Summary = request.Summary;
+        entity.Content = request.Content;
+        entity.ImageUrl = request.ImageUrl ?? entity.ImageUrl;
+        entity.CategoryId = request.CategoryId;
+        entity.SourceId = request.SourceId;
+        entity.ReadTime = request.ReadTime ?? entity.ReadTime;
+        await db.SaveChangesAsync(ct);
+
+        await redis.InvalidateArticleAsync(id, ct);
+        var updated = await repo.GetByIdAsync(id);
+        return Ok(updated!.ToDetailDto());
+    }
+
     // DELETE /api/articles/5 — verify soft delete
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(
@@ -87,6 +159,21 @@ public class ArticlesController(
             ct);
         _ = dashboard.PushSnapshotAsync();
         return NoContent();
+    }
+
+    private async Task<string> GenerateUniqueSlugAsync(string title, int? ignoreId, CancellationToken ct)
+    {
+        var baseSlug = SlugHelper.Slugify(title);
+        if (string.IsNullOrEmpty(baseSlug)) baseSlug = "article";
+        var slug = baseSlug;
+        var suffix = 2;
+        while (await db.Articles.AnyAsync(
+                   a => a.Slug == slug && (ignoreId == null || a.Id != ignoreId),
+                   ct))
+        {
+            slug = $"{baseSlug}-{suffix++}";
+        }
+        return slug;
     }
 
     // ── Dapper endpoints ──────────────────────────────────────────────────

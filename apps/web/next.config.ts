@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: [
+    "@gjirafanews/api-client",
+    "@gjirafanews/auth",
     "@gjirafanews/types",
     "@gjirafanews/utils",
     "@gjirafanews/ui",

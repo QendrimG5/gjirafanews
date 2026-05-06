@@ -1,9 +1,14 @@
 import type { MetadataRoute } from "next";
-import { articles, categories } from "@/lib/data";
+import { api } from "@/lib/api";
 
 const BASE_URL = "https://gjirafanews.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [articles, categories] = await Promise.all([
+    api.articles.list({ page: 1 }).catch(() => []),
+    api.categories.list().catch(() => []),
+  ]);
+
   const articleEntries: MetadataRoute.Sitemap = articles.map((article) => ({
     url: `${BASE_URL}/article/${article.id}`,
     lastModified: new Date(article.publishedAt),
