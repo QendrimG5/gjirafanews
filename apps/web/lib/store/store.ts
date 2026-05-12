@@ -1,18 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./authSlice";
+import stubReducer from "./authSlice";
 
-// The store now only manages client-side auth state.
-// Server state (articles, categories, auth session) is handled by TanStack Query,
-// which has its own cache outside of Redux. This keeps the store minimal and
-// avoids the middleware/reducer boilerplate RTK Query required.
+// All client and server state is now handled by TanStack Query, Zustand
+// (saved-articles), and Auth.js (session). The Redux store is kept only as
+// a placeholder so the legacy Provider in components/providers.tsx still
+// type-checks; remove once a meaningful slice is reintroduced.
 
-export const makeStore = () => {
-  return configureStore({
+export const makeStore = () =>
+  configureStore({
     reducer: {
-      auth: authReducer,
+      stub: stubReducer,
     },
   });
-};
 
 export type AppStore = ReturnType<typeof makeStore>;
 export type RootState = ReturnType<AppStore["getState"]>;

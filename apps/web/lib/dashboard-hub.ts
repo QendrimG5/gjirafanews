@@ -8,8 +8,9 @@ import {
   LogLevel,
 } from "@microsoft/signalr";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
-const HUB_URL = `${API_URL}/hubs/dashboard`;
+import { env } from "@/lib/env";
+
+const HUB_URL = `${env.NEXT_PUBLIC_API_BASE_URL}/hubs/dashboard`;
 
 export type DashboardLatest = {
   title: string;

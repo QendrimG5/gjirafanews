@@ -736,3 +736,53 @@ step ships value and unblocks the next. The full per-PR breakdown lives in
 
 Each step is independently revertible. Steps 1–4 are safe in any order; 5+
 build on the renames in step 3.
+
+---
+
+## 10. Backend wiring (landed)
+
+The Auth + api-client subset of phases 7–8 has landed in this PR. End state:
+
+- **Single base URL.** `apps/web` and `apps/admin` both call the .NET API at
+  `NEXT_PUBLIC_API_BASE_URL` / `VITE_API_URL` (`http://localhost:5283`).
+  The Next.js mock routes for `/api/articles`, `/api/categories`,
+  `/api/sources`, and the mock chat have been deleted.
+- **Single auth system.** Keycloak is the IdP everywhere. `apps/admin`
+  continues to use `keycloak-js` via `@gjirafanews/auth/spa`. `apps/web` now
+  uses Auth.js v5 (`next-auth@beta`) via `@gjirafanews/auth/nextauth`. The
+  hand-rolled bcrypt+jose path in `apps/web/lib/session*` and
+  `apps/web/app/api/auth/{login,logout,register,me}` is gone.
+- **Two new shared packages** — both raw `.ts` (matching the existing
+  `packages/types|ui|utils` convention; phase 5's tsup build pipeline is a
+  separate follow-up):
+  - `@gjirafanews/auth` — Keycloak config, token utilities, Auth.js
+    Keycloak provider factory, SPA `createKeycloak()` helper. Subpath
+    exports (`/spa`, `/nextauth`) so each consumer pulls in only the
+    framework integration it needs.
+  - `@gjirafanews/api-client` — typed fetch wrapper, per-resource modules
+    (`articles`, `categories`, `sources`, `notifications`, `chat`,
+    `uploads`, `emails`, `users`). Handles both raw DTOs and the
+    `ApiResponse<T>` envelope used by `UsersController`.
+- **New backend surface** for the missing endpoints the web mocks used to
+  serve:
+  - `CategoriesController` (`/api/categories`) — list with article counts,
+    get-by-id, admin-only create/update/delete with slug uniqueness.
+  - `SourcesController` (`/api/sources`) — same shape, URL uniqueness.
+  - `ArticlesController` gained `POST /api/articles` and
+    `PUT /api/articles/{id}` (admin-only, FluentValidation).
+- **Keycloak realm** ships a new public-site client `web` alongside the
+  existing `admin-web`. See [`docs/auth.md`](auth.md) for setup, redirect
+  URIs, and how to reset the realm volume.
+- **SignalR hubs** (`/hubs/{notifications,chat,dashboard}`) continue to
+  connect anonymously as before. Only the env var name changed:
+  `NEXT_PUBLIC_API_URL` → `NEXT_PUBLIC_API_BASE_URL`, default
+  `http://localhost:5283`. Token injection on hubs is a phase 9 follow-up.
+
+### Out of scope (still pending)
+
+- Phase 5 (tsup builds + Turborepo).
+- Phase 6 (`Program.cs` decomposition, Hangfire dashboard auth filter).
+- Phase 9 (`packages/realtime` + SignalR token injection).
+- Phase 10 (CI workflows).
+- Standardizing `ApiResponse<T>` across all .NET controllers — only
+  `UsersController` uses it today; the api-client tolerates both shapes.

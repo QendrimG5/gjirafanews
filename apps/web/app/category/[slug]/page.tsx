@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import NewsCard from "@/components/news-card";
 import CategoryBar from "@/components/category-bar";
 import AIChat from "@/components/chat";
-import { articles, categories, getArticleWithRelations } from "@/lib/data";
+import { api } from "@/lib/api";
+import { articleListToWithRelations, categoryFromDto } from "@/lib/data";
 import TrackEvent from "@/components/track-event";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const categories = await api.categories.list();
   const category = categories.find((c) => c.slug === slug);
 
   if (!category) {
@@ -36,17 +38,22 @@ export default async function CategoryPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const category = categories.find((c) => c.slug === slug);
+  const [categoryDtos, articleDtos] = await Promise.all([
+    api.categories.list(),
+    api.articles.list({ page: 1 }),
+  ]);
 
-  if (!category) notFound();
+  const categoryDto = categoryDtos.find((c) => c.slug === slug);
+  if (!categoryDto) notFound();
 
-  const categoryArticles = articles
-    .filter((a) => a.categoryId === category.id)
+  const category = categoryFromDto(categoryDto);
+  const categoryArticles = articleDtos
+    .map(articleListToWithRelations)
+    .filter((a) => a.category.slug === slug)
     .sort(
       (a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-    )
-    .map(getArticleWithRelations);
+    );
 
   return (
     <>
@@ -58,7 +65,7 @@ export default async function CategoryPage({
           article_count: categoryArticles.length,
         }}
       />
-      <CategoryBar categories={categories} />
+      <CategoryBar categories={categoryDtos.map(categoryFromDto)} />
       <div className="mx-auto max-w-6xl px-5 py-8">
         <div className="mb-6">
           <h1 className="text-gn-text text-2xl font-bold tracking-tight">
@@ -74,7 +81,6 @@ export default async function CategoryPage({
           ))}
         </div>
 
-        {/* AI Chat — category-specific SSE streaming */}
         <div className="mb-5 mt-10 flex items-center gap-3">
           <h2 className="text-gn-text text-sm font-semibold tracking-wider uppercase">
             AI Asistenti — {category.name}

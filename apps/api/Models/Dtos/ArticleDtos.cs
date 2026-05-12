@@ -38,3 +38,21 @@ public record ArticleDetailDto(
     FeaturedImageDto? FeaturedImage,
     IReadOnlyList<TagDto> Tags,
     IReadOnlyList<CommentDto> Comments);
+
+public record CreateArticleRequest(
+    string Title,
+    string Summary,
+    string Content,
+    string? ImageUrl,
+    int CategoryId,
+    int SourceId,
+    int? ReadTime);
+
+public record UpdateArticleRequest(
+    string Title,
+    string Summary,
+    string Content,
+    string? ImageUrl,
+    int CategoryId,
+    int SourceId,
+    int? ReadTime);

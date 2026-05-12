@@ -9,6 +9,8 @@
     "preview": "vite preview --port 3002"
   },
   "dependencies": {
+    "@gjirafanews/api-client": "workspace:*",
+    "@gjirafanews/auth": "workspace:*",
     "@gjirafanews/types": "workspace:*",
     "@gjirafanews/ui": "workspace:*",
     "@gjirafanews/utils": "workspace:*",

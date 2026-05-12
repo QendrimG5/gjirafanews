@@ -3,6 +3,7 @@ using GjirafaNewsAPI.Controllers;
 using GjirafaNewsAPI.Domain.Entities;
 using GjirafaNewsAPI.Models.Dtos;
 using GjirafaNewsAPI.Repositories;
+using GjirafaNewsAPI.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -14,10 +15,11 @@ public class ArticlesControllerTests
 {
     private readonly Mock<IArticleRepository> _repo = new(MockBehavior.Strict);
     private readonly Mock<IRedisService> _redis = new(MockBehavior.Strict);
+    private readonly Mock<INotificationService> _notifications = new();
     private readonly IOptions<CacheOptions> _cacheOptions = Options.Create(new CacheOptions());
 
     private ArticlesController CreateSut() =>
-        new(_repo.Object, dapper: null!, _redis.Object, _cacheOptions)
+        new(_repo.Object, dapper: null!, _redis.Object, _notifications.Object, _cacheOptions, db: null!)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
         };

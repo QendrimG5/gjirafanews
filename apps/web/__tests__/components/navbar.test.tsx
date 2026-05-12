@@ -55,6 +55,12 @@ jest.mock("@/components/auth-nav-link", () => {
   };
 });
 
+jest.mock("@/components/notifications-nav-link", () => {
+  return function MockNotificationsNavLink() {
+    return <div data-testid="notifications-nav-link">NotificationsNavLink</div>;
+  };
+});
+
 // Import Navbar after all mocks are in place.
 import Navbar from "@/components/navbar";
 

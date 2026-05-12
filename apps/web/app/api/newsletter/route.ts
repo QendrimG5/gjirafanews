@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { Resend } from "resend";
-import { articles, getArticleWithRelations } from "@/lib/data";
+import { api } from "@/lib/api";
+import { articleListToWithRelations } from "@/lib/data";
 import { renderWelcomeEmail } from "@/lib/email-templates/welcome";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,13 +32,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const firstArticle = [...articles]
+    const recent = await api.articles.list({ page: 1 }).catch(() => []);
+    const firstArticle = recent
+      .map(articleListToWithRelations)
       .sort(
         (a, b) =>
           new Date(b.publishedAt).getTime() -
           new Date(a.publishedAt).getTime(),
-      )
-      .map(getArticleWithRelations)[0];
+      )[0];
 
     const { subject, html } = renderWelcomeEmail({ firstArticle, siteUrl });
 

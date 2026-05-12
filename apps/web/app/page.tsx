@@ -1,40 +1,34 @@
 import Link from "next/link";
 import CategoryBar from "@/components/category-bar";
-
-export const dynamic = "force-dynamic";
-
 import SaveButton from "@/components/save-button";
 import HomePageLive from "@/components/homepage";
 import NewsletterBanner from "@/components/newsletter-banner";
-import { articles, categories, getArticleWithRelations } from "@/lib/data";
+import { api } from "@/lib/api";
+import { articleListToWithRelations, categoryFromDto } from "@/lib/data";
+import { timeAgo } from "@gjirafanews/utils";
 
-function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 60) return `${diffMins}m`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d`;
-}
+export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const sortedArticles = [...articles]
+export default async function Home() {
+  const [articleDtos, categoryDtos] = await Promise.all([
+    api.articles.list({ page: 1 }, { init: { next: { revalidate: 60 } } }),
+    api.categories.list({ init: { next: { revalidate: 300 } } }),
+  ]);
+
+  const sortedArticles = articleDtos
+    .map(articleListToWithRelations)
     .sort(
       (a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-    )
-    .map(getArticleWithRelations);
+    );
 
+  const categories = categoryDtos.map(categoryFromDto);
   const featured = sortedArticles[0];
 
   return (
     <>
       <CategoryBar categories={categories} />
       <div className="mx-auto max-w-6xl px-5 py-6 sm:py-8">
-        {/* Hero — featured article with large image */}
         {featured && (
           <Link href={`/article/${featured.id}`} className="group mb-10 block">
             <article className="bg-gn-overlay relative aspect-[16/9] overflow-hidden rounded-2xl sm:aspect-[21/9]">

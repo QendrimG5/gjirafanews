@@ -9,9 +9,9 @@ import {
 } from "@microsoft/signalr";
 import type { ArticleWithRelations } from "@gjirafanews/types";
 import type { LiveMessage } from "./types";
+import { env } from "@/lib/env";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API_URL = env.NEXT_PUBLIC_API_BASE_URL;
 const HUB_URL = `${API_URL}/hubs/chat`;
 const HISTORY_URL = `${API_URL}/api/live-chat/messages?limit=100`;
 

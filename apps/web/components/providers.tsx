@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Provider } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 import { makeStore } from "@/lib/store/store";
 import { NotificationsProvider } from "@/lib/notifications-context";
 
@@ -26,10 +27,12 @@ export default function StoreProvider({
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
-        <NotificationsProvider>{children}</NotificationsProvider>
-      </Provider>
-    </QueryClientProvider>
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>
+        <Provider store={store}>
+          <NotificationsProvider>{children}</NotificationsProvider>
+        </Provider>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }

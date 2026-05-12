@@ -1,8 +1,8 @@
 name: gjirafanews
 
 # Profile-driven stack:
-#   --profile infra         backing services only (postgres, redis, keycloak, minio, kafka, papercut)
-#   --profile api           infra + the .NET API
+#   --profile infra         backing services only (postgres, pgbouncer, redis, keycloak, minio, kafka, papercut)
+#   --profile api           infra + the .NET API (keycloak included — the API validates its JWTs)
 #   --profile web           infra + api + web + admin (full stack)
 #   --profile observability optional: loki, grafana, kafka-ui
 #
@@ -65,7 +65,7 @@ services:
 
   # ── Keycloak (auth) ──────────────────────────────────────────────────────
   keycloak-db:
-    profiles: [infra, web]
+    profiles: [infra, api, web]
     image: postgres:16-alpine
     container_name: gjirafanews_keycloak_db
     environment:
@@ -81,7 +81,7 @@ services:
       retries: 10
 
   keycloak:
-    profiles: [infra, web]
+    profiles: [infra, api, web]
     image: quay.io/keycloak/keycloak:26.0
     container_name: gjirafanews_keycloak
     command: ["start-dev", "--import-realm"]
@@ -219,6 +219,7 @@ services:
       redis:       { condition: service_healthy }
       kafka:       { condition: service_healthy }
       papercut:    { condition: service_started }
+      keycloak:    { condition: service_started }
       minio-init:  { condition: service_completed_successfully }
 
   # ── Web (Next.js public site) ────────────────────────────────────────────
