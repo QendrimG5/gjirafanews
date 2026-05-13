@@ -3,6 +3,7 @@ import {
   createApiClient,
   type ArticleListDto,
   type ArticleDetailDto,
+  type ArticleSearchResponse,
   type CategoryWithCountDto,
   type SourceDto,
   type CreateArticleRequest as CreateArticleDto,
@@ -236,5 +237,16 @@ export function useGetSourcesQuery() {
       return dtos.map(sourceDtoToItem);
     },
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+// Semantic search. Mutation (not query) because each call costs an OpenAI API
+// roundtrip — we only want to trigger it on explicit user action, never on
+// component render or query-key change.
+export type SearchArticlesInput = { q: string; limit: number };
+
+export function useSearchArticlesMutation() {
+  return useMutation<ArticleSearchResponse, Error, SearchArticlesInput>({
+    mutationFn: (params) => apiClient.articles.search(params),
   });
 }

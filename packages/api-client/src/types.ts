@@ -62,6 +62,42 @@ export type CategoryStatsDto = {
   latestPublishedAt: string | null;
 };
 
+// Semantic search response. `distance` is cosine distance (0 = identical),
+// `similarity` is 1 - distance (1 = identical) for the more familiar scale.
+export type ArticleSearchHit = {
+  article: ArticleListDto;
+  distance: number;
+  similarity: number;
+};
+
+export type ArticleSearchResponse = {
+  query: string;
+  limit: number;
+  model: string;
+  results: ArticleSearchHit[];
+};
+
+// RAG chat: streamed-from-the-server SSE events. The discriminator (`type`)
+// matches the JSON the .NET endpoint emits in each `data:` frame.
+export type ChatSourceArticle = {
+  rank: number;
+  id: number;
+  title: string;
+  summary: string;
+  category: string | null;
+  source: string | null;
+  publishedAt: string;
+  similarity: number;
+};
+
+export type ChatStreamEvent =
+  | { type: "sources"; articles: ChatSourceArticle[] }
+  | { type: "token"; text: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+export type ChatRequest = { question: string; topK?: number };
+
 export type NotificationDto = {
   id: string;
   type: string;

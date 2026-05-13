@@ -8,6 +8,7 @@ import DashboardPage from "./pages/dashboard";
 import NewArticlePage from "./pages/new-article";
 import EditArticlePage from "./pages/edit-article";
 import CategoriesPage from "./pages/categories";
+import SearchPage from "./pages/search";
 
 export default function App() {
   const [queryClient] = useState(
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/articles/new" element={<NewArticlePage />} />
           <Route path="/articles/:id/edit" element={<EditArticlePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/search" element={<SearchPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

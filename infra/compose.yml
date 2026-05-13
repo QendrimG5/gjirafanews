@@ -10,9 +10,12 @@ name: gjirafanews
 
 services:
   # ── Postgres (app DB) ────────────────────────────────────────────────────
+  # pgvector/pgvector:pg16 is the official pgvector image — same Postgres 16
+  # as before, with the `vector` extension preinstalled. Run `CREATE EXTENSION
+  # vector` once per DB (handled by init.sql on a fresh volume).
   postgres:
     profiles: [infra, api, web]
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: gjirafanews_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

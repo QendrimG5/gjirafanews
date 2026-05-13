@@ -25,6 +25,12 @@ export default function AdminLayout() {
             >
               Kategorite
             </Link>
+            <Link
+              to="/search"
+              className="text-xs text-white/60 transition-colors hover:text-white"
+            >
+              Pyet AI
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-white/50">{user?.name}</span>

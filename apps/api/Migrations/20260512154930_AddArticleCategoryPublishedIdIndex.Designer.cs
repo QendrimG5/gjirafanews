@@ -3,18 +3,20 @@ using System;
 using GjirafaNewsAPI.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using Pgvector;
 
 #nullable disable
 
 namespace GjirafaNewsAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260512154930_AddArticleCategoryPublishedIdIndex")]
+    partial class AddArticleCategoryPublishedIdIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -155,68 +157,6 @@ namespace GjirafaNewsAPI.Migrations
                         .HasDatabaseName("ix_articles_category_id_published_at_id");
 
                     b.ToTable("articles", (string)null);
-                });
-
-            modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.ArticleEmbedding", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ArticleId")
-                        .HasColumnType("integer")
-                        .HasColumnName("article_id");
-
-                    b.Property<string>("ContentHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("content_hash");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<Vector>("Embedding")
-                        .IsRequired()
-                        .HasColumnType("vector(1024)")
-                        .HasColumnName("embedding");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_deleted");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("model");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_article_embeddings");
-
-                    b.HasIndex("ArticleId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_article_embeddings_article_id");
-
-                    b.HasIndex("Embedding")
-                        .HasDatabaseName("ix_article_embeddings_embedding");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Embedding"), "hnsw");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Embedding"), new[] { "vector_cosine_ops" });
-
-                    b.ToTable("article_embeddings", (string)null);
                 });
 
             modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.Category", b =>
@@ -579,18 +519,6 @@ namespace GjirafaNewsAPI.Migrations
                     b.Navigation("Source");
                 });
 
-            modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.ArticleEmbedding", b =>
-                {
-                    b.HasOne("GjirafaNewsAPI.Domain.Entities.Article", "Article")
-                        .WithOne("Embedding")
-                        .HasForeignKey("GjirafaNewsAPI.Domain.Entities.ArticleEmbedding", "ArticleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_article_embeddings_articles_article_id");
-
-                    b.Navigation("Article");
-                });
-
             modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.Comment", b =>
                 {
                     b.HasOne("GjirafaNewsAPI.Domain.Entities.Article", "Article")
@@ -627,8 +555,6 @@ namespace GjirafaNewsAPI.Migrations
             modelBuilder.Entity("GjirafaNewsAPI.Domain.Entities.Article", b =>
                 {
                     b.Navigation("Comments");
-
-                    b.Navigation("Embedding");
 
                     b.Navigation("FeaturedImage");
                 });

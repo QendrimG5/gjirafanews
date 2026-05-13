@@ -7,15 +7,16 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<Article>       Articles       => Set<Article>();
-    public DbSet<Category>      Categories     => Set<Category>();
-    public DbSet<Source>        Sources        => Set<Source>();
-    public DbSet<Tag>           Tags           => Set<Tag>();
-    public DbSet<Comment>       Comments       => Set<Comment>();
-    public DbSet<FeaturedImage> FeaturedImages => Set<FeaturedImage>();
-    public DbSet<User>          Users          => Set<User>();
-    public DbSet<Notification>  Notifications  => Set<Notification>();
-    public DbSet<ChatMessage>   ChatMessages   => Set<ChatMessage>();
+    public DbSet<Article>          Articles          => Set<Article>();
+    public DbSet<ArticleEmbedding> ArticleEmbeddings => Set<ArticleEmbedding>();
+    public DbSet<Category>         Categories        => Set<Category>();
+    public DbSet<Source>           Sources           => Set<Source>();
+    public DbSet<Tag>              Tags              => Set<Tag>();
+    public DbSet<Comment>          Comments          => Set<Comment>();
+    public DbSet<FeaturedImage>    FeaturedImages    => Set<FeaturedImage>();
+    public DbSet<User>             Users             => Set<User>();
+    public DbSet<Notification>     Notifications     => Set<Notification>();
+    public DbSet<ChatMessage>      ChatMessages      => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

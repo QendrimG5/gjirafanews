@@ -48,5 +48,10 @@ public class ArticleConfiguration : IEntityTypeConfiguration<Article>
         builder.HasIndex(a => a.SourceId);
         builder.HasIndex(a => a.PublishedAt);
         builder.HasIndex(a => new { a.IsDeleted, a.PublishedAt });  // composite
+
+        // Powers GetByCategory + GetByCategoryCursor (keyset pagination):
+        // equality on CategoryId, descending on (PublishedAt, Id) to match ORDER BY.
+        builder.HasIndex(a => new { a.CategoryId, a.PublishedAt, a.Id })
+               .IsDescending(false, true, true);
     }
 }

@@ -17,6 +17,7 @@ using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Pgvector.EntityFrameworkCore;  // EF Core integration for pgvector (UseVector on NpgsqlDbContextOptionsBuilder)
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 using StackExchange.Redis;
@@ -63,19 +64,71 @@ namespace GjirafaNewsAPI
             builder.Services.AddSingleton<SoftDeleteInterceptor>();
 
             builder.Services.AddDbContext<AppDbContext>((sp, options) => options
-                .UseNpgsql(connectionString)
+                .UseNpgsql(connectionString, npg => npg.UseVector())  // pgvector type mapping for EF
                 .UseSnakeCaseNamingConvention()
                 //.UseLazyLoadingProxies()
                 .AddInterceptors(
                     sp.GetRequiredService<AuditTimestampInterceptor>(),
                     sp.GetRequiredService<SoftDeleteInterceptor>()));
 
-            builder.Services.AddNpgsqlDataSource(connectionString);  // for Dapper
+            // for Dapper — register the pgvector type-info resolver on the data
+            // source so raw Npgsql commands (and Dapper queries) can read/write
+            // Pgvector.Vector. In Npgsql 10 the old `UseVector()` extension on
+            // NpgsqlDataSourceBuilder is gone (NpgsqlDataSourceBuilder no longer
+            // implements INpgsqlTypeMapper); the resolver-factory API is the
+            // current way to plug in custom type info.
+            //
+            // NPG9001: AddTypeInfoResolverFactory is currently marked "evaluation
+            // only" by Npgsql — the API works but the surface may change. The EF
+            // path (UseVector above) is stable; this is just for raw/Dapper reads.
+#pragma warning disable NPG9001
+            builder.Services.AddNpgsqlDataSource(
+                connectionString,
+                ds => ds.AddTypeInfoResolverFactory(new Pgvector.Npgsql.VectorTypeInfoResolverFactory()));
+#pragma warning restore NPG9001
             builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
             builder.Services.AddScoped<DapperArticleRepository>();
             builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IArticleSeederService, ArticleSeederService>();
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+            // ── OpenAI embeddings ───────────────────────────────────────────
+            // Typed HttpClient lets IHttpClientFactory manage handler lifetime
+            // (default 2-min rotation, avoids socket exhaustion and stale DNS).
+            // Implementation is transient — fine to capture the scoped AppDbContext
+            // because it's resolved per request scope.
+            builder.Services.Configure<OpenAIEmbeddingOptions>(
+                builder.Configuration.GetSection(OpenAIEmbeddingOptions.SectionName));
+            builder.Services.AddHttpClient<IEmbeddingService, OpenAIEmbeddingService>((sp, client) =>
+            {
+                var opts = sp.GetRequiredService<IOptions<OpenAIEmbeddingOptions>>().Value;
+                // Ensure trailing slash so relative "embeddings" resolves correctly
+                var baseUrl = opts.BaseUrl.EndsWith('/') ? opts.BaseUrl : opts.BaseUrl + "/";
+                client.BaseAddress = new Uri(baseUrl);
+                if (!string.IsNullOrEmpty(opts.ApiKey))
+                    client.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", opts.ApiKey);
+                // 60s is generous for a batch of 100 short inputs; OpenAI is usually <2s.
+                client.Timeout = TimeSpan.FromSeconds(60);
+            });
+
+            // ── OpenAI chat completions (RAG) ───────────────────────────────
+            // Same shape as the embedding client; longer timeout because a
+            // streamed answer can take >60s for a verbose response on a busy
+            // model.
+            builder.Services.Configure<OpenAIChatOptions>(
+                builder.Configuration.GetSection(OpenAIChatOptions.SectionName));
+            builder.Services.AddHttpClient<IChatCompletionService, OpenAIChatCompletionService>((sp, client) =>
+            {
+                var opts = sp.GetRequiredService<IOptions<OpenAIChatOptions>>().Value;
+                var baseUrl = opts.BaseUrl.EndsWith('/') ? opts.BaseUrl : opts.BaseUrl + "/";
+                client.BaseAddress = new Uri(baseUrl);
+                if (!string.IsNullOrEmpty(opts.ApiKey))
+                    client.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", opts.ApiKey);
+                client.Timeout = TimeSpan.FromMinutes(2);
+            });
 
             builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
             var redisConnectionString = builder.Configuration.GetConnectionString("Redis")

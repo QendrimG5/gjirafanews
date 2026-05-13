@@ -73,6 +73,31 @@ export class HttpClient {
 
     return (await response.json()) as T;
   }
+
+  /**
+   * Raw streaming request. Returns the underlying `Response` so the caller can
+   * read `response.body` as a `ReadableStream`. Mirrors the token-injection and
+   * base-URL handling of `request<T>()`, but skips body parsing — use this for
+   * SSE / NDJSON / any non-JSON body that needs to be consumed incrementally.
+   *
+   * Throws `ApiError` on non-2xx (consuming the response body as text for the
+   * error message).
+   */
+  async openStream(path: string, init: RequestInit = {}): Promise<Response> {
+    const url = `${this.opts.baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+    const headers = new Headers(init.headers);
+    if (this.opts.getToken) {
+      const token = await this.opts.getToken();
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+    }
+    if (init.body && !headers.has("Content-Type"))
+      headers.set("Content-Type", "application/json");
+
+    const fetchImpl = this.opts.fetch ?? fetch;
+    const response = await fetchImpl(url, { ...init, headers });
+    if (!response.ok) throw await parseError(response);
+    return response;
+  }
 }
 
 function buildUrl(

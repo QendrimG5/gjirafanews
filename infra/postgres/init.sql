@@ -4,6 +4,11 @@
 -- Only contains structures that must exist BEFORE the .NET API starts.
 -- =============================================================================
 
+-- pgvector — must be enabled before any migration that creates a vector column.
+-- Image: pgvector/pgvector:pg16 ships the extension; this just registers it
+-- in the target database.
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- Article views table (used in the Dapper bulk-insert demo)
 -- Standalone — no FK to articles intentionally, so it exists even before migrations
 CREATE TABLE IF NOT EXISTS article_views (
